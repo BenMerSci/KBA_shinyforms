@@ -1,0 +1,5 @@
+# Folder to ignore
+proposal/
+joint_files/
+# Files to ignore
+notes.md
