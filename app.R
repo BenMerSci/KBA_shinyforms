@@ -1,15 +1,99 @@
 library(shiny)
-library(xlsx)
+
 # User interface
 ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(      
+        h1("Instructions")
+    ),
 
-  fileInput("uploadFile", "files_xlsx", multiple = TRUE)
-  #submitButton(text = "Sumbit")
+    mainPanel(
+      titlePanel("KBA proposals conversion"),
+        # radioButtons to select weither you want to summarize one or multiple proposals
+      fluidRow(
+        column(width = 4,
+          radioButtons("proposalNumber", "Number of proposals to summarize",
+                      choices = list("One proposal" = "1prop", 
+                                  "Multiple proposals" = "xprop"),
+                      selected = "1prop"),
+        ),
+        # radioButtons to select if you want to include question to experts
+        column(width = 4,
+          radioButtons("questions", "Including questions to expert",
+                      choices = list("Yes" = "withquestion",
+                                 "No" = "withoutquestion"),
+                      selected = "withoutquestion"),
+        ),
+        column(width = 4,
+        # radioButtons to select if you want to include reviews
+          radioButtons("reviews", "Including review",
+                        choices = list("Yes" = "withreview",
+                                   "No" = "withoutreview"),
+                        selected = "withoutreview"),
+        ),
+      ),
+      # input fields change depending on proposalNumber wanted
+        conditionalPanel(
+          condition = "input.proposalNumber == '1prop'",
+          fileInput("file1", "Select proposal to summarize",
+                     # select just selected sheet
+                     multiple = FALSE,
+                     accept = c(".xlsx", ".xlsm", ".xls"),
+                     width = '100%')
+        ),
+      
+        conditionalPanel(
+          condition = "input.proposalNumber == 'xprop'",
+          fileInput("file2", "Select proposals to summarize",
+                     multiple = TRUE,
+                     accept = c(".xlsx", ".xlsm", ".xls"),
+                     width = '100%')
+        ),
 
+
+      textOutput("finalForms"),
+
+
+    )
+  )
 )
 
-# Server side
-server <- function(input, ouput) {}
+server <- function(input, output) {
 
-# Run the application
-shinyApp(ui = ui, server = server)
+  file_df <- reactive({
+    req(input$proposalNumber)
+    
+    if (input$proposalNumber == "1prop") {
+      req(input$file1)
+      df <- input$file1$datapath
+    }else if (input$proposalNumber == "xprop") {
+      req(input$file2)
+      df <- input$file2$datapath
+    }
+    
+  })
+
+  askQuestion <- reactive({
+    if(input$questions == "withquestion") return(TRUE)
+    if(input$questions == "withoutquestion") return(FALSE)
+  })
+
+  askReview <- reactive({
+    if(input$reviews == "withreview") return(TRUE)
+    if(input$reviews == "withoutreview") return(FALSE)
+  })
+
+#output$t1 <- renderText({file_df()})
+
+source("R/produce_summaryKBA.R")
+
+output$finalForms <- reactive({
+
+               df <- test(KBAforms = file_df(), includeQuestions = askQuestion(), includeReviewDetails = askReview())
+})
+
+
+}
+
+
+shinyApp(ui, server)
