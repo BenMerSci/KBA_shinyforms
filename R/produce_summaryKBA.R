@@ -1,30 +1,5 @@
-#### KBA Canada Tools
-#### Wildlife Conservation Society - 2021
-#### Script by Chloé Debyser
+form_conversion <- function(KBAforms, includeQuestions, includeReviewDetails)
 
-#### Produce KBA Summary for the KBA Canada Proposal Form, v1.1
-# NOTE: I'll need to create a "New Proposal Form" version of the templates so they take the new flextable/variable names AND include the new sections. 
-# NOTE: Add D1-3 criteria! Should support ALL criteria supported in V1.1 of the proposal form
-
-#### README ####
-# This code can be run in single-processing mode (i.e. to create a single summary document)
-# OR in batch-processing mode (i.e. to create a set of summary documents at once).
-
-# To run in single-processing mode: the input and output variables should be paths pointing to individual files:
-# - the input file is the KBA Proposal and Nomination Form;
-# - the output file is the output summary document.
-
-# To run in batch-processing mode: the input and output variables should be paths pointing to folders:
-# - the input folder is where the KBA Proposal and Nomination Forms are located (path with no final forward slash);
-# - the output folder is where the resulting summary documents will be saved (path with no final forward slash).
-
-#### Input Parameters ####
-input <- 'KBAProposal_Ojibway Prairie Complex and Greater Park Ecosystem- 08.27.2021-RR.xlsm'
-output <- 'Ojibway Prairie Complex and Greater Park Ecosystem_2021-09.02.docx'
-includeQuestions <- FALSE # Set to TRUE if the output should include questions for reviewers, and to FALSE otherwise. Option TRUE is not yet implemented: if you need to use this option, please set to FALSE and copy-paste the questions into the document produced.
-includeReviewDetails <- FALSE # Set to TRUE if the output should include information about the technical and general review stages, and to FALSE otherwise.
-
-#### Workspace ####
 # Packages
 library(tidyverse)
 library(magrittr)
@@ -39,20 +14,6 @@ library(stringr)
 # Options
 options(scipen = 999)
 
-# User
-#if(file.exists("C:/Users/CDebyser")){
-#  user <- "Chloe"
-#}else if(file.exists("C:/Users/jgrimm")){
-#  user <- "Jaime"
-#}
-#
-## Working directory
-#if(user == "Chloe"){
-#  setwd("G:/My Drive/KBA Canada Team")
-#}else if(user == "Jaime"){
-#  setwd("G:/.shortcut-targets-by-id/17XT5f4qkjNpUrtHKlO_uXtuRjx-h6PEu/KBA Canada Team")
-#}
-
 # Data
       # Species list
 speciesList <- read.xlsx('joint_files/Wiki_Species.xlsx', sheet = 2) %>%
@@ -63,27 +24,6 @@ speciesList <- read.xlsx('joint_files/Wiki_Species.xlsx', sheet = 2) %>%
       # Criteria definitions
 criteria_definitions <- read.xlsx("joint_files/KBACriteria_Definitions.xlsx")
 ## Google Drive: https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-
-#### Determine if Single- or Batch-Processing ####
-if(dir.exists(input)){
-  if(dir.exists(output)){
-    batch <- T
-    KBAforms <- paste(input, list.files(input, pattern="*.xlsx"), sep="/")
-  }else{
-    stop("The input is a folder but the output is not")
-  }
-}else{
-  if(dir.exists(output)){
-    stop("The output is a folder but the input is not")
-  }else{
-    batch <- F
-    KBAforms <- input
-    docs <- output
-  }
-}
-
-#### Prepare the Summary(ies) ####
-loop <- 1
 
 for(KBAform in KBAforms){
   
@@ -1005,5 +945,6 @@ for(KBAform in KBAforms){
   Sys.sleep(10)
   body_add_flextables(doc, doc, FT)
   print(paste("Summary of", nationalName, "created!"))
-  loop <- loop+1
+
+  KBAforms[KBAform] <- doc
 }
