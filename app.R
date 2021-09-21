@@ -1,13 +1,5 @@
 library(shiny)
-library(tidyverse)
-library(magrittr)
-library(WordR)
-library(flextable)
-library(officer)
-library(openxlsx)
-library(lubridate)
-library(janitor)
-library(stringr)
+
 
 # User interface
 ui <- fluidPage(

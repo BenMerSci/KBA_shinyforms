@@ -1,16 +1,16 @@
 form_conversion <- function(KBAforms, includeQuestions, includeReviewDetails){
 
 
-# Packages
-#library(tidyverse)
-#library(magrittr)
-#library(WordR)
-#library(flextable)
-#library(officer)
-#library(openxlsx)
-#library(lubridate)
-#library(janitor)
-#library(stringr)
+ Packages
+library(tidyverse)
+library(magrittr)
+library(WordR)
+library(flextable)
+library(officer)
+library(openxlsx)
+library(lubridate)
+library(janitor)
+library(stringr)
 
 # Options
 options(scipen = 999)
