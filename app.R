@@ -1,4 +1,13 @@
 library(shiny)
+library(tidyverse)
+library(magrittr)
+library(WordR)
+library(flextable)
+library(officer)
+library(openxlsx)
+library(lubridate)
+library(janitor)
+library(stringr)
 
 # User interface
 ui <- fluidPage(
@@ -9,6 +18,7 @@ ui <- fluidPage(
 
     mainPanel(
       titlePanel("KBA proposals conversion"),
+      shinyjs::useShinyjs(),
         # radioButtons to select weither you want to summarize one or multiple proposals
       fluidRow(
         column(width = 4,
@@ -50,25 +60,28 @@ ui <- fluidPage(
                      width = '100%')
         ),
 
-
-      textOutput("finalForms"),
-
-
+      
+        actionButton("runScript", "Convert to summary"),
+        downloadButton("downloadData", "Download")
     )
   )
 )
 
 server <- function(input, output) {
 
+source("R/KBA_summary.R")
+
+shinyjs::hide('downloadData')
+
   file_df <- reactive({
     req(input$proposalNumber)
     
     if (input$proposalNumber == "1prop") {
       req(input$file1)
-      df <- input$file1$datapath
+      df <- input$file1
     }else if (input$proposalNumber == "xprop") {
       req(input$file2)
-      df <- input$file2$datapath
+      df <- input$file2
     }
     
   })
@@ -83,16 +96,31 @@ server <- function(input, output) {
     if(input$reviews == "withoutreview") return(FALSE)
   })
 
-#output$t1 <- renderText({file_df()})
+  r <- reactiveValues(test = NULL)
 
-source("R/produce_summaryKBA.R")
+  observeEvent(input$runScript, {
+    r$test <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
+    
+    output$downloadData <- downloadHandler(
+      filename = function() "Summaries.zip",
+      content = function(file) {
+          # create a temp folder for shp files
+          temp_fold <- tempdir()
+          zip_file <- paste0(temp_fold,"/Summaries.zip")
+          zip(zipfile = zip_file, files = r$test)
+          # copy the zip file to the file argument
+          file.copy(zip_file, file, overwrite = TRUE)
+          # remove all the files created
+          file.remove(zip_file)
+        }
+      
+      #function() zip(zipfile = "./Summaries", files = r$test)
+    )
+    shinyjs::show('downloadData')
+    print('pouf')
 
-output$finalForms <- reactive({
-
-               df <- test(KBAforms = file_df(), includeQuestions = askQuestion(), includeReviewDetails = askReview())
-})
-
-
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
+  
 }
 
 
