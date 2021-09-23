@@ -1,8 +1,9 @@
 form_conversion <- function(KBAforms, includeQuestions, includeReviewDetails){
+browser()
 
-
- Packages
+# Packages
 library(tidyverse)
+library(dplyr)
 library(magrittr)
 library(WordR)
 library(flextable)
@@ -11,7 +12,7 @@ library(openxlsx)
 library(lubridate)
 library(janitor)
 library(stringr)
-
+library(tidyr)
 # Options
 options(scipen = 999)
 
@@ -48,7 +49,7 @@ for(step in 1:length(KBAforms)){
   resultsSpecies <- read.xlsx(KBAforms[step], sheet = "results_species")
   resultsEcosystems <- read.xlsx(KBAforms[step], sheet = "results_ecosystems")
 
-  # Get form version number
+    # Get form version number
   formVersion <- home[1,1] %>% substr(., start=9, stop=nchar(.)) %>% as.numeric()
   
   # Format the sheets
@@ -100,7 +101,7 @@ for(step in 1:length(KBAforms)){
   review %<>%
     drop_na(X2) %>%
     fill(`INSTRUCTIONS:`)
-  
+
   technicalReview <- review %>%
     filter(`INSTRUCTIONS:` == 1) %>%
     select(-`INSTRUCTIONS:`)
@@ -137,8 +138,12 @@ for(step in 1:length(KBAforms)){
   check_checkboxes <- checkboxes %>%
     .[2:nrow(.),] %>%
     select("8..Checks") %>%
-    drop_na()
-  if(formVersion == 1.1){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
+    drop_na() #%>%
+    #.[,"8..Checks"]
+    
+
+    
+  if(formVersion %in% c(1, 1.1)) check_checkboxes %<>% .[c(1:5,7:nrow(.)),] # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
   
               # Verify that there are as many checkbox results as there are checkboxes
   if(!(nrow(check) == length(check_checkboxes))){stop("Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with the error message.")}
@@ -216,18 +221,17 @@ for(step in 1:length(KBAforms)){
     mutate(Definition = sapply(1:nrow(.), function(x) criteria_definitions[which(criteria_definitions$Criteria == .$Criteria[x]), .$Scope[x]]))
   
               # Number of species
-  maxCol <- max(sapply(species$`Criteria met`, function(x) str_count(x, ";")))+1
+  maxCol <- max(sapply(species$`Criteria met`[which(!is.na(species$`Criteria met`))], function(x) str_count(x, ";")))+1
   criteriaCols <- paste0("Col", 1:maxCol)
   
   criteriaInfo <- species %>%
     filter(!is.na(`Criteria met`)) %>%
     select(`Scientific name`, `Criteria met`) %>%
     separate(`Criteria met`, into=criteriaCols, sep="; ", fill="right") %>%
-    pivot_longer(criteriaCols, names_to = "Remove", values_to="Criteria met") %>%
+    pivot_longer(all_of(criteriaCols), names_to = "Remove", values_to="Criteria met") %>%
     filter(!is.na(`Criteria met`)) %>%
     group_by(`Criteria met`) %>%
-    summarise(NSpecies = n()) %>%
-    ungroup() %>%
+    summarise(NSpecies = n(), .groups="drop") %>%
     left_join(criteriaInfo, ., by=c("CriteriaFull" = "Criteria met"))
   
               # Species names
@@ -235,12 +239,11 @@ for(step in 1:length(KBAforms)){
     filter(!is.na(`Criteria met`)) %>%
     select(`Scientific name`, `Criteria met`) %>%
     separate(`Criteria met`, into=criteriaCols, sep="; ", fill="right") %>%
-    pivot_longer(criteriaCols, names_to = "Remove", values_to="Criteria met") %>%
+    pivot_longer(all_of(criteriaCols), names_to = "Remove", values_to="Criteria met") %>%
     filter(!is.na(`Criteria met`)) %>%
     arrange(`Scientific name`) %>%
     group_by(`Criteria met`) %>%
-    summarise(speciesNames = paste(`Scientific name`, collapse=", ")) %>%
-    ungroup() %>%
+    summarise(speciesNames = paste(`Scientific name`, collapse=", "), .groups="drop") %>%
     left_join(criteriaInfo, ., by=c("CriteriaFull" = "Criteria met"))
   
   # PICK UP HERE
@@ -937,12 +940,12 @@ for(step in 1:length(KBAforms)){
     }
   }
   
-   #Compute document name
+   #Compute document name   
    doc <- paste0("Summary_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)"), repl=""), "_", Sys.Date(), ".docx")
- 
+  
   # Save
   doc <- renderInlineCode(template, doc)
-  Sys.sleep(10)
+  #Sys.sleep(10)
   doc <- body_add_flextables(doc, doc, FT)
 
   KBAforms[step] <- doc
@@ -952,6 +955,6 @@ return(KBAforms)
 }
 
 
-#form_conversion("proposal/test.xlsm", includeQuestions = FALSE, includeReviewDetails = FALSE)
-#KBAforms = "proposal/test.xlsm"
-#KBAforms = "proposal/KBAProposal_Ojibway Prairie Complex and Greater Park Ecosystem- 08.27.2021-RR.xlsm"
+form_conversion(KBAforms = KBAforms, includeQuestions = FALSE, includeReviewDetails = FALSE)
+KBAforms = "proposal/KBAProposal_Ojibway Prairie Complex and Greater Park Ecosystem- 08.27.2021-RR.xlsm"
+KBAforms = "proposal/KBAProposal_AishihikMeadow_Canada_Global_v2.xlsm"
