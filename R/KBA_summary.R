@@ -1,18 +1,5 @@
 form_conversion <- function(KBAforms, includeQuestions, includeReviewDetails){
-browser()
 
-# Packages
-library(tidyverse)
-library(dplyr)
-library(magrittr)
-library(WordR)
-library(flextable)
-library(officer)
-library(openxlsx)
-library(lubridate)
-library(janitor)
-library(stringr)
-library(tidyr)
 # Options
 options(scipen = 999)
 
@@ -138,13 +125,11 @@ for(step in 1:length(KBAforms)){
   check_checkboxes <- checkboxes %>%
     .[2:nrow(.),] %>%
     select("8..Checks") %>%
-    drop_na() #%>%
-    #.[,"8..Checks"]
+    drop_na()
     
+if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
 
-    
-  if(formVersion %in% c(1, 1.1)) check_checkboxes %<>% .[c(1:5,7:nrow(.)),] # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
-  
+      
               # Verify that there are as many checkbox results as there are checkboxes
   if(!(nrow(check) == length(check_checkboxes))){stop("Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with the error message.")}
   
@@ -156,42 +141,42 @@ for(step in 1:length(KBAforms)){
   
   # Prepare variables
         # 1. KBA Name
-  nationalName <- site$GENERAL[which(site$Field == "National name")]
+  nationalName <<- site$GENERAL[which(site$Field == "National name")]
   
         # 2. Location
               # Jurisdiction
-  juris <- site$GENERAL[which(site$Field == "Province or Territory")]
+  juris <<- site$GENERAL[which(site$Field == "Province or Territory")]
   
               # Latitude and Longitude
-  lat <- site$GENERAL[which(site$Field == "Latitude (dd.dddd)")] %>%
+  lat <<- site$GENERAL[which(site$Field == "Latitude (dd.dddd)")] %>%
     as.numeric(.) %>%
     round(., 3)
-  lat <- ifelse(is.na(lat), "coordinates unspecified", lat)
+  lat <<- ifelse(is.na(lat), "coordinates unspecified", lat)
   
-  lon <- site$GENERAL[which(site$Field == "Longitude (dd.dddd)")] %>%
+  lon <<- site$GENERAL[which(site$Field == "Longitude (dd.dddd)")] %>%
     as.numeric(.) %>%
     round(., 3)
-  lon <- ifelse(is.na(lon), "", paste0("/", lon))
+  lon <<- ifelse(is.na(lon), "", paste0("/", lon))
   
         # 3. KBA Scope
-  scope <- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
+  scope <<- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
                   "Global and National",
                   ifelse(grepl("g", home[13,4], fixed=T),
                          "Global",
                          "National"))
   
         # 4. Proposal Development Lead
-  proposalLead <- proposer$Entry[which(proposer$Field == "Name")]
+  proposalLead <<- proposer$Entry[which(proposer$Field == "Name")]
   
         # 7. Site Description
-  siteDescription <- site$GENERAL[which(site$Field == "Site description")]
+  siteDescription <<- site$GENERAL[which(site$Field == "Site description")]
   
         # 8. Assessment Details - KBA Trigger Species
-  includeGlobalTriggers <- ifelse(scope %in% c("Global and National", "Global"), "GLOBAL", "")
-  includeNationalTriggers <- ifelse(scope %in% c("Global and National", "National"), "NATIONAL", "")
+  includeGlobalTriggers <<- ifelse(scope %in% c("Global and National", "Global"), "GLOBAL", "")
+  includeNationalTriggers <<- ifelse(scope %in% c("Global and National", "National"), "NATIONAL", "")
   
         # 10. Delineation Rationale
-  delineationRationale <- site$GENERAL[which(site$Field == "Delineation rationale")]
+  delineationRationale <<- site$GENERAL[which(site$Field == "Delineation rationale")]
   
         # 12. General Review
   noFeedback <- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")]
@@ -945,7 +930,7 @@ for(step in 1:length(KBAforms)){
   
   # Save
   doc <- renderInlineCode(template, doc)
-  #Sys.sleep(10)
+  Sys.sleep(10)
   doc <- body_add_flextables(doc, doc, FT)
 
   KBAforms[step] <- doc
@@ -954,7 +939,5 @@ for(step in 1:length(KBAforms)){
 return(KBAforms)
 }
 
-
-form_conversion(KBAforms = KBAforms, includeQuestions = FALSE, includeReviewDetails = FALSE)
-KBAforms = "proposal/KBAProposal_Ojibway Prairie Complex and Greater Park Ecosystem- 08.27.2021-RR.xlsm"
-KBAforms = "proposal/KBAProposal_AishihikMeadow_Canada_Global_v2.xlsm"
+#form_conversion(KBAforms = KBAforms, includeQuestions = FALSE, includeReviewDetails = FALSE)
+#KBAforms = "proposal/KBAProposal_Ojibway Prairie Complex and Greater Park Ecosystem- 08.27.2021-RR.xlsm"
