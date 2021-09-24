@@ -1,4 +1,12 @@
 library(shiny)
+library(tidyverse)
+library(magrittr)
+library(WordR)
+library(flextable)
+library(officer)
+library(openxlsx)
+library(lubridate)
+library(janitor)
 
 
 # User interface
@@ -106,14 +114,13 @@ shinyjs::hide('downloadData')
           file.remove(zip_file)
         }
       
-      #function() zip(zipfile = "./Summaries", files = r$test)
     )
+
+    rm(delineationRationale,includeGlobalTriggers,includeNationalTriggers,juris,lat,lon,nationalName,proposalLead,scope,siteDescription, envir = sys.frame())
     shinyjs::show('downloadData')
-    print('pouf')
 
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
   
 }
-
 
 shinyApp(ui, server)
