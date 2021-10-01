@@ -7,7 +7,10 @@ library(officer)
 library(openxlsx)
 library(lubridate)
 library(janitor)
+library(googlesheets4)
 
+# Authenticate googlesheets4
+googlesheets4::gs4_auth(cache = ".secrets", email = "benmercier20@icloud.com")
 
 # User interface
 ui <- fluidPage(
