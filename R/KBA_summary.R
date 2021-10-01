@@ -5,7 +5,7 @@ options(scipen = 999)
 
 # Data
       # Species list
-speciesList <- read.xlsx('joint_files/Ref_Species.xlsx', sheet=2) %>%
+speciesList <-  read.xlsx('joint_files/Ref_Species.xlsx', sheet=2) %>%
   mutate(IUCN_AssessmentDate = convertToDate(IUCN_AssessmentDate), COSEWIC_DATE = convertToDate(COSEWIC_DATE), G_RANK_REVIEW_DATE = convertToDate(G_RANK_REVIEW_DATE), N_RANK_REVIEW_DATE = convertToDate(N_RANK_REVIEW_DATE)) %>%
   select(NATIONAL_SCIENTIFIC_NAME, Endemism, IUCN_CD, IUCN_AssessmentDate, COSEWIC_STATUS, COSEWIC_DATE, ROUNDED_G_RANK, G_RANK_REVIEW_DATE, ROUNDED_N_RANK, N_RANK_REVIEW_DATE)
 ## Google Drive: https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
