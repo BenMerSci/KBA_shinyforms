@@ -1,8 +1,6 @@
 # Folder to ignore
 proposal/
-joint_files/
 rsconnect/
 # Files to ignore
-notes.md
-.Rhistory
+.Rprofile
 .secrets
