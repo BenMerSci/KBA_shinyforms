@@ -7,10 +7,11 @@ library(officer)
 library(openxlsx)
 library(lubridate)
 library(janitor)
-library(googlesheets4)
+library(googledrive)
 
-# Authenticate googlesheets4
-googlesheets4::gs4_auth(cache = ".secrets", email = "benmercier20@icloud.com")
+# Authenticate googledrive
+# Informations to authenticate are stored in an .Rprofile
+googledrive::drive_auth()
 
 # User interface
 ui <- fluidPage(
