@@ -5,13 +5,15 @@ options(scipen = 999)
 
 # Data
       # Species list
-speciesList <-  read.xlsx('joint_files/Ref_Species.xlsx', sheet=2) %>%
-  mutate(IUCN_AssessmentDate = convertToDate(IUCN_AssessmentDate), COSEWIC_DATE = convertToDate(COSEWIC_DATE), G_RANK_REVIEW_DATE = convertToDate(G_RANK_REVIEW_DATE), N_RANK_REVIEW_DATE = convertToDate(N_RANK_REVIEW_DATE)) %>%
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+speciesList <- openxlsx::read.xlsx("Ref_Species.xlsx", sheet=2) %>%
+ mutate(IUCN_AssessmentDate = convertToDate(IUCN_AssessmentDate), COSEWIC_DATE = convertToDate(COSEWIC_DATE), G_RANK_REVIEW_DATE = convertToDate(G_RANK_REVIEW_DATE), N_RANK_REVIEW_DATE = convertToDate(N_RANK_REVIEW_DATE)) %>%
   select(NATIONAL_SCIENTIFIC_NAME, Endemism, IUCN_CD, IUCN_AssessmentDate, COSEWIC_STATUS, COSEWIC_DATE, ROUNDED_G_RANK, G_RANK_REVIEW_DATE, ROUNDED_N_RANK, N_RANK_REVIEW_DATE)
 ## Google Drive: https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
 
       # Criteria definitions
-criteria_definitions <- read.xlsx("joint_files/KBACriteria_Definitions.xlsx")
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+criteria_definitions <- read.xlsx("KBACriteria_Definitions.xlsx")
 ## Google Drive: https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
 
 
@@ -877,24 +879,30 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
   if(includeQuestions){
     if(includeReviewDetails){
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_Review_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_Review_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_Review_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_Review_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_Review_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_Review_National.docx'
         ## Google Drive: https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }else{
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_NoReview_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_NoReview_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_NoReview_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_NoReview_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_NoReview_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_NoReview_National.docx'
         ## Google Drive: https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }
@@ -902,24 +910,30 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
   }else{
     if(includeReviewDetails){
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_Review_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1ztHExERMAN6GfgHeu1y2jwI7PPfuspjf/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_Review_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/1ztHExERMAN6GfgHeu1y2jwI7PPfuspjf/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_Review_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1zxKFrxZjkc6VpNdBdkt80VSM5jg3-zXm/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_Review_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/1zxKFrxZjkc6VpNdBdkt80VSM5jg3-zXm/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_Review_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1zzD8vb0X8kq2_B_lXwhoxqxcj8JK9IIe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_Review_National.docx'
         ## Google Drive: https://docs.google.com/document/d/1zzD8vb0X8kq2_B_lXwhoxqxcj8JK9IIe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }else{
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_NoReview_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1--Qh4Dif9Cr8RNS9u1ODcsVvXEDLBIEG/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_NoReview_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/1--Qh4Dif9Cr8RNS9u1ODcsVvXEDLBIEG/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_NoReview_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1-31LLlC09UpJeH6fKFFLagPtZG8jxkzT/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_NoReview_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/1-31LLlC09UpJeH6fKFFLagPtZG8jxkzT/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_NoReview_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1mjDJVcLVkYGpc961QApZNU7YvuN4RqJc/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_NoReview_National.docx'
         ## Google Drive: https://docs.google.com/document/d/1mjDJVcLVkYGpc961QApZNU7YvuN4RqJc/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }
@@ -938,6 +952,3 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
 }
 return(KBAforms)
 }
-
-#form_conversion(KBAforms = KBAforms, includeQuestions = FALSE, includeReviewDetails = FALSE)
-#KBAforms = "proposal/KBAProposal_Ojibway Prairie Complex and Greater Park Ecosystem- 08.27.2021-RR.xlsm"
