@@ -64,7 +64,7 @@ ui <- fluidPage(
                      width = '100%')
         ),
 
-        tableOutput("res_table")  
+        tableOutput("res_table"), 
       
         actionButton("runScript", "Convert to summary"),
         downloadButton("downloadData", "Download")
