@@ -16,11 +16,16 @@ googledrive::drive_download("https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3
 criteria_definitions <- read.xlsx("KBACriteria_Definitions.xlsx")
 ## Google Drive: https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
 
+# Create a dataframe to store the success/failure state of each conversion
+convert_res <- data.frame(matrix(ncol=2))
+colnames(convert_res) <- c("result","error")
 
 #### Prepare the Summary(ies) ####
 
 for(step in 1:length(KBAforms)){
   
+  success <- FALSE # set success to FALSE
+
   # Load KBA Canada Proposal Form
         # Visible sheets
   home <- read.xlsx(KBAforms[step], sheet = "HOME")
@@ -73,7 +78,10 @@ for(step in 1:length(KBAforms)){
     pull(X2) %>%
     unique() %>%
     .[which(!. == "Criteria met")]
-  if(!length(ecosystems) == 0){stop("Ecosystem KBAs not yet supported. Please contact Chloé and provide her with the error message.")}
+  if(!length(ecosystems) == 0){convert_res[step,"result"] <- "Failed"
+                              convert_res[step,"error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with the error message."
+                              KBAforms[step] <- NA
+                              next}
         
         # 5. THREATS
               # Verify whether "No Threats" checkbox is checked
@@ -938,17 +946,30 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
       }
     }
   }
-  
+
+
    #Compute document name   
    doc <- paste0("Summary_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)"), repl=""), "_", Sys.Date(), ".docx")
   
   # Save
   doc <- renderInlineCode(template, doc)
-  Sys.sleep(10)
+  Sys.sleep(5)
   doc <- body_add_flextables(doc, doc, FT)
 
   KBAforms[step] <- doc
+  
+  # If the previous doc object was created, than the conversion was a success
+  sucess <- TRUE
 
+  # Section to check if the conversion was a success
+  # Create a list to stock the summ
+  if(sucess == TRUE) {convert_res[step,"result"] <- "Success"}
+  
 }
-return(KBAforms)
+
+  list_item <- list() # list to stock the summaries and a dataframe to see if it's a success or not
+  list_item[[1]] <- KBAforms
+  list_item[[2]] <- convert_res
+
+return(list_item)
 }

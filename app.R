@@ -64,6 +64,7 @@ ui <- fluidPage(
                      width = '100%')
         ),
 
+        tableOutput("res_table")  
       
         actionButton("runScript", "Convert to summary"),
         downloadButton("downloadData", "Download")
@@ -105,13 +106,15 @@ shinyjs::hide('downloadData')
   observeEvent(input$runScript, {
     r$test <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
     
+    output$res_table <- renderTable(r$test[[2]])
+
     output$downloadData <- downloadHandler(
       filename = function() "Summaries.zip",
       content = function(file) {
           # create a temp folder for shp files
           temp_fold <- tempdir()
           zip_file <- paste0(temp_fold,"/Summaries.zip")
-          zip(zipfile = zip_file, files = r$test)
+          zip(zipfile = zip_file, files = r$test[[1]])
           # copy the zip file to the file argument
           file.copy(zip_file, file, overwrite = TRUE)
           # remove all the files created
