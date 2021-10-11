@@ -17,15 +17,19 @@ criteria_definitions <- read.xlsx("KBACriteria_Definitions.xlsx")
 ## Google Drive: https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
 
 # Create a dataframe to store the success/failure state of each conversion
-convert_res <- data.frame(matrix(ncol=2))
-colnames(convert_res) <- c("result","error")
+convert_res <- data.frame(matrix(ncol=3))
+colnames(convert_res) <- c("Name","Result","Error")
 
 #### Prepare the Summary(ies) ####
 
-for(step in 1:length(KBAforms)){
-  
-  success <- FALSE # set success to FALSE
+withProgress(message = "Converting forms", value = 0, {
 
+for(step in 1:length(KBAforms)){
+
+  incProgress(1/length(KBAforms), detail = paste("form number ", step))
+
+  success <- FALSE # set success to FALSE
+  
   # Load KBA Canada Proposal Form
         # Visible sheets
   home <- read.xlsx(KBAforms[step], sheet = "HOME")
@@ -42,6 +46,9 @@ for(step in 1:length(KBAforms)){
   checkboxes <- read.xlsx(KBAforms[step], sheet = "checkboxes")
   resultsSpecies <- read.xlsx(KBAforms[step], sheet = "results_species")
   resultsEcosystems <- read.xlsx(KBAforms[step], sheet = "results_ecosystems")
+
+  # Set the name of the form in the result table to be printed in Shiny
+  convert_res[step,"Name"] <- site[1,"GENERAL"]
 
     # Get form version number
   formVersion <- home[1,1] %>% substr(., start=9, stop=nchar(.)) %>% as.numeric()
@@ -78,8 +85,8 @@ for(step in 1:length(KBAforms)){
     pull(X2) %>%
     unique() %>%
     .[which(!. == "Criteria met")]
-  if(!length(ecosystems) == 0){convert_res[step,"result"] <- "Failed"
-                              convert_res[step,"error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with the error message."
+  if(!length(ecosystems) == 0){convert_res[step,"Result"] <- emo::ji("prohibited")
+                              convert_res[step,"Error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with the error message."
                               KBAforms[step] <- NA
                               next}
         
@@ -141,7 +148,12 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
 
       
               # Verify that there are as many checkbox results as there are checkboxes
-  if(!(nrow(check) == length(check_checkboxes))){stop("Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with the error message.")}
+  if(!(nrow(check) == length(check_checkboxes))){convert_res[step,"Result"] <- emo::ji("prohibited")
+                              			convert_res[step,"Error"] <- "Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with the error message."
+                              			KBAforms[step] <- NA
+                              			next}
+	  
+	  
   
               # Add checkbox results to the 8. CHECK tab
   check %<>%
@@ -205,8 +217,11 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
   
               # Check that at least one criterion is met
   if(is.na(criteriaMet)){
-    stop("No KBA Criteria met. Please revise your form and ensure that at least one criterion is met. If you believe that a KBA criterion should be met based on the information you provided in the form, contact Chloé and provide her with the error message.")
-  }
+	convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Error"] <- "No KBA Criteria met. Please revise your form and ensure that at least one criterion is met. If you believe that a KBA criterion should be met based on the information you provided in the form, contact Chloé and provide her with the error message."
+        KBAforms[step] <- NA
+        next
+	}
   
               # Criteria definitions
   criteriaInfo <- data.frame(CriteriaFull = strsplit(criteriaMet, "; ")[[1]]) %>%
@@ -284,7 +299,12 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
     filter(grepl("n", `Criteria met`, fixed=T)) %>%
     mutate(`Criteria met` = substr(`Criteria met`, start=2, stop=nchar(`Criteria met`)))
   
-  if(!(nrow(speciesAssessments_g) + nrow(speciesAssessments_n)) == nrow(speciesAssessments)){stop("Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message.")}
+  if(!(nrow(speciesAssessments_g) + nrow(speciesAssessments_n)) == nrow(speciesAssessments)){
+	convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Error"] <- "Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message."
+        KBAforms[step] <- NA
+        next
+	}
   rm(speciesAssessments)
   
               # Information for the footnotes
@@ -963,9 +983,11 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
 
   # Section to check if the conversion was a success
   # Create a list to stock the summ
-  if(sucess == TRUE) {convert_res[step,"result"] <- "Success"}
+  if(sucess == TRUE) {convert_res[step,"Result"] <- emo::ji("check")}
+
   
 }
+})
 
   list_item <- list() # list to stock the summaries and a dataframe to see if it's a success or not
   list_item[[1]] <- KBAforms
