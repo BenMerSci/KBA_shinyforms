@@ -8,6 +8,7 @@ library(openxlsx)
 library(lubridate)
 library(janitor)
 library(googledrive)
+library(emo)
 
 # Authenticate googledrive
 # Informations to authenticate are stored in an .Rprofile
