@@ -48,6 +48,12 @@ for(step in 1:length(KBAforms)){
   resultsEcosystems <- read.xlsx(KBAforms[step], sheet = "results_ecosystems")
 
   # Set the name of the form in the result table to be printed in Shiny
+  if(is.na(site[1,"GENERAL"])) {convert_res[step,"Result"] <- emo::ji("prohibited")
+                              convert_res[step,"Error"] <- "KBA site must have a name."
+                              KBAforms[step] <- NA
+                              next}
+
+  # Assign the name of the site to the name in result table
   convert_res[step,"Name"] <- site[1,"GENERAL"]
 
     # Get form version number
@@ -981,14 +987,13 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
   # If the previous doc object was created, than the conversion was a success
   sucess <- TRUE
 
-  # Section to check if the conversion was a success
-  # Create a list to stock the summ
+  # Compute the successful conversion into the table
   if(sucess == TRUE) {convert_res[step,"Result"] <- emo::ji("check")}
-
   
 }
 })
 
+  # List to store the summaries AND the result table that will be displayed on the Shiny app 
   list_item <- list() # list to stock the summaries and a dataframe to see if it's a success or not
   list_item[[1]] <- KBAforms
   list_item[[2]] <- convert_res
