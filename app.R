@@ -66,8 +66,7 @@ ui <- fluidPage(
         ),
 
         tableOutput("res_table"), 
-      
-        actionButton("runScript", "Convert to summary"),
+        uiOutput('runButton'),
         downloadButton("downloadData", "Download")
     )
   )
@@ -89,7 +88,11 @@ shinyjs::hide('downloadData')
       req(input$file2)
       df <- input$file2
     }
-    
+  })
+
+  output$runButton <- renderUI({
+    if(is.null(file_df())) return()
+    actionButton("runScript", "Convert to summary")
   })
 
   askQuestion <- reactive({
