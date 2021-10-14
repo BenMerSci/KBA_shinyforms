@@ -20,17 +20,18 @@ ui <- fluidPage(
     sidebarPanel(      
         h1("Instructions")
     ),
-
+# Or drop files here
     mainPanel(
-      titlePanel("KBA proposals conversion"),
+      titlePanel("Creation of KBA summaries"),
       shinyjs::useShinyjs(),
         # radioButtons to select weither you want to summarize one or multiple proposals
       fluidRow(
         column(width = 4,
-          radioButtons("proposalNumber", "Number of proposals to summarize",
-                      choices = list("One proposal" = "1prop", 
-                                  "Multiple proposals" = "xprop"),
-                      selected = "1prop"),
+          fileInput("file", label = "Upload your proposal(s)",
+                     placeholder = "or drag and drop",
+                     multiple = TRUE,
+                     accept = c(".xlsx", ".xlsm", ".xls"),
+                     width = '100%')
         ),
         # radioButtons to select if you want to include question to experts
         column(width = 4,
@@ -47,25 +48,8 @@ ui <- fluidPage(
                         selected = "withoutreview"),
         ),
       ),
-      # input fields change depending on proposalNumber wanted
-        conditionalPanel(
-          condition = "input.proposalNumber == '1prop'",
-          fileInput("file1", "Select proposal to summarize",
-                     # select just selected sheet
-                     multiple = FALSE,
-                     accept = c(".xlsx", ".xlsm", ".xls"),
-                     width = '100%')
-        ),
-      
-        conditionalPanel(
-          condition = "input.proposalNumber == 'xprop'",
-          fileInput("file2", "Select proposals to summarize",
-                     multiple = TRUE,
-                     accept = c(".xlsx", ".xlsm", ".xls"),
-                     width = '100%')
-        ),
 
-        tableOutput("res_table"), 
+        tableOutput("resTable"),
         uiOutput('runButton'),
         downloadButton("downloadData", "Download")
     )
@@ -79,15 +63,8 @@ source("R/KBA_summary.R")
 shinyjs::hide('downloadData')
 
   file_df <- reactive({
-    req(input$proposalNumber)
-    
-    if (input$proposalNumber == "1prop") {
-      req(input$file1)
-      df <- input$file1
-    }else if (input$proposalNumber == "xprop") {
-      req(input$file2)
-      df <- input$file2
-    }
+    req(input$file)
+    df <- input$file
   })
 
   output$runButton <- renderUI({
@@ -105,12 +82,12 @@ shinyjs::hide('downloadData')
     if(input$reviews == "withoutreview") return(FALSE)
   })
 
-  r <- reactiveValues(test = NULL)
+  r <- reactiveValues(convertRes = NULL)
 
   observeEvent(input$runScript, {
-    r$test <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
+    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
     
-    output$res_table <- renderTable(r$test[[2]])
+    output$resTable <- renderTable(r$convertRes[[2]])
 
     output$downloadData <- downloadHandler(
       filename = function() "Summaries.zip",
@@ -118,7 +95,7 @@ shinyjs::hide('downloadData')
           # create a temp folder for shp files
           temp_fold <- tempdir()
           zip_file <- paste0(temp_fold,"/Summaries.zip")
-          zip(zipfile = zip_file, files = r$test[[1]])
+          zip(zipfile = zip_file, files = r$convertRes[[1]])
           # copy the zip file to the file argument
           file.copy(zip_file, file, overwrite = TRUE)
           # remove all the files created
