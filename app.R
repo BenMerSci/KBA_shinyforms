@@ -92,7 +92,7 @@ shinyjs::hide('downloadData')
 
     output$downloadData <- downloadHandler(
       filename = function() if(length(file_df()$name) == 1){
-        paste0("Summary.docx")
+        paste0(r$convertRes[[2]]$Name,".docx")
       } else{"Summaries.zip"},
       content = function(file) if(length(file_df()$name) == 1){
         file.rename( from = r$convertRes[[1]], to = file )
