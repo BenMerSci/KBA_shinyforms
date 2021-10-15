@@ -5,3 +5,4 @@ joint_files/
 # Files to ignore
 notes.md
 R/gantt_chart.R
+.Rproj.user
