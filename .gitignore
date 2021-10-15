@@ -4,3 +4,4 @@ rsconnect/
 # Files to ignore
 .Rprofile
 .secrets
+*.png
