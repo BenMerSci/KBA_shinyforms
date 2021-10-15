@@ -17,18 +17,19 @@ googledrive::drive_auth()
 # User interface
 ui <- fluidPage(
   sidebarLayout(
+
     sidebarPanel(      
-        h1("Instructions")
+        h3("README")
     ),
-# Or drop files here
+
     mainPanel(
       titlePanel("Creation of KBA summaries"),
       shinyjs::useShinyjs(),
-        # radioButtons to select weither you want to summarize one or multiple proposals
+
       fluidRow(
         column(width = 4,
           fileInput("file", label = "Upload your proposal(s)",
-                     placeholder = "or drag and drop",
+                     placeholder = "or drop files here",
                      multiple = TRUE,
                      accept = c(".xlsx", ".xlsm", ".xls"),
                      width = '100%')
@@ -90,8 +91,12 @@ shinyjs::hide('downloadData')
     output$resTable <- renderTable(r$convertRes[[2]])
 
     output$downloadData <- downloadHandler(
-      filename = function() "Summaries.zip",
-      content = function(file) {
+      filename = function() if(length(file_df()$name) == 1){
+        paste0("Summary.docx")
+      } else{"Summaries.zip"},
+      content = function(file) if(length(file_df()$name) == 1){
+        file.rename( from = r$convertRes[[1]], to = file )
+      } else{
           # create a temp folder for shp files
           temp_fold <- tempdir()
           zip_file <- paste0(temp_fold,"/Summaries.zip")
@@ -101,7 +106,7 @@ shinyjs::hide('downloadData')
           # remove all the files created
           file.remove(zip_file)
         }
-      
+    
     )
 
     rm(delineationRationale,includeGlobalTriggers,includeNationalTriggers,juris,lat,lon,nationalName,proposalLead,scope,siteDescription, envir = sys.frame())
