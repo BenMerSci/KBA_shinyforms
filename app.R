@@ -1,4 +1,5 @@
 library(shiny)
+library(bslib)
 library(tidyverse)
 library(magrittr)
 library(WordR)
@@ -16,6 +17,7 @@ googledrive::drive_auth()
 
 # User interface
 ui <- fluidPage(
+  theme = bs_theme(version = 5),
   sidebarLayout(
 
     sidebarPanel(      
@@ -86,6 +88,7 @@ shinyjs::hide('downloadData')
   r <- reactiveValues(convertRes = NULL)
 
   observeEvent(input$runScript, {
+    shinyjs::disable("runScript")
     r$convertRes <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
     
     output$resTable <- renderTable(r$convertRes[[2]])
