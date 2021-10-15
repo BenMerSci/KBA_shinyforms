@@ -2,6 +2,12 @@
 proposal/
 rsconnect/
 # Files to ignore
+<<<<<<< HEAD
+notes.md
+R/gantt_chart.R
+.Rproj.user
+=======
 .Rprofile
 .secrets
 *.png
+>>>>>>> a04df51ac2ec6612e302136fab72858a209b5dc3
