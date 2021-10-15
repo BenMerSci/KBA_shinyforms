@@ -1,36 +1,34 @@
 form_conversion <- function(KBAforms, includeQuestions, includeReviewDetails){
-browser()
 
-# Packages
-library(tidyverse)
-library(dplyr)
-library(magrittr)
-library(WordR)
-library(flextable)
-library(officer)
-library(openxlsx)
-library(lubridate)
-library(janitor)
-library(stringr)
-library(tidyr)
 # Options
 options(scipen = 999)
 
 # Data
       # Species list
-speciesList <- read.xlsx('joint_files/Ref_Species.xlsx', sheet=2) %>%
-  mutate(IUCN_AssessmentDate = convertToDate(IUCN_AssessmentDate), COSEWIC_DATE = convertToDate(COSEWIC_DATE), G_RANK_REVIEW_DATE = convertToDate(G_RANK_REVIEW_DATE), N_RANK_REVIEW_DATE = convertToDate(N_RANK_REVIEW_DATE)) %>%
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+speciesList <- openxlsx::read.xlsx("Ref_Species.xlsx", sheet=2) %>%
+ mutate(IUCN_AssessmentDate = convertToDate(IUCN_AssessmentDate), COSEWIC_DATE = convertToDate(COSEWIC_DATE), G_RANK_REVIEW_DATE = convertToDate(G_RANK_REVIEW_DATE), N_RANK_REVIEW_DATE = convertToDate(N_RANK_REVIEW_DATE)) %>%
   select(NATIONAL_SCIENTIFIC_NAME, Endemism, IUCN_CD, IUCN_AssessmentDate, COSEWIC_STATUS, COSEWIC_DATE, ROUNDED_G_RANK, G_RANK_REVIEW_DATE, ROUNDED_N_RANK, N_RANK_REVIEW_DATE)
 ## Google Drive: https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
 
       # Criteria definitions
-criteria_definitions <- read.xlsx("joint_files/KBACriteria_Definitions.xlsx")
+googledrive::drive_download("https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+criteria_definitions <- read.xlsx("KBACriteria_Definitions.xlsx")
 ## Google Drive: https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
 
+# Create a dataframe to store the success/failure state of each conversion
+convert_res <- data.frame(matrix(ncol=3))
+colnames(convert_res) <- c("Name","Result","Error")
 
 #### Prepare the Summary(ies) ####
 
+withProgress(message = "Converting forms", value = 0, {
+
 for(step in 1:length(KBAforms)){
+
+  incProgress(1/length(KBAforms), detail = paste("form number ", step))
+
+  success <- FALSE # set success to FALSE
   
   # Load KBA Canada Proposal Form
         # Visible sheets
@@ -48,6 +46,15 @@ for(step in 1:length(KBAforms)){
   checkboxes <- read.xlsx(KBAforms[step], sheet = "checkboxes")
   resultsSpecies <- read.xlsx(KBAforms[step], sheet = "results_species")
   resultsEcosystems <- read.xlsx(KBAforms[step], sheet = "results_ecosystems")
+
+  # Set the name of the form in the result table to be printed in Shiny
+  if(is.na(site[1,"GENERAL"])) {convert_res[step,"Result"] <- emo::ji("prohibited")
+                              convert_res[step,"Error"] <- "KBA site must have a name."
+                              KBAforms[step] <- NA
+                              next}
+
+  # Assign the name of the site to the name in result table
+  convert_res[step,"Name"] <- site[1,"GENERAL"]
 
     # Get form version number
   formVersion <- home[1,1] %>% substr(., start=9, stop=nchar(.)) %>% as.numeric()
@@ -84,7 +91,10 @@ for(step in 1:length(KBAforms)){
     pull(X2) %>%
     unique() %>%
     .[which(!. == "Criteria met")]
-  if(!length(ecosystems) == 0){stop("Ecosystem KBAs not yet supported. Please contact Chloé and provide her with the error message.")}
+  if(!length(ecosystems) == 0){convert_res[step,"Result"] <- emo::ji("prohibited")
+                              convert_res[step,"Error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with the error message."
+                              KBAforms[step] <- NA
+                              next}
         
         # 5. THREATS
               # Verify whether "No Threats" checkbox is checked
@@ -138,15 +148,18 @@ for(step in 1:length(KBAforms)){
   check_checkboxes <- checkboxes %>%
     .[2:nrow(.),] %>%
     select("8..Checks") %>%
-    drop_na() #%>%
-    #.[,"8..Checks"]
+    drop_na()
     
+if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
 
-    
-  if(formVersion %in% c(1, 1.1)) check_checkboxes %<>% .[c(1:5,7:nrow(.)),] # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
-  
+      
               # Verify that there are as many checkbox results as there are checkboxes
-  if(!(nrow(check) == length(check_checkboxes))){stop("Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with the error message.")}
+  if(!(nrow(check) == length(check_checkboxes))){convert_res[step,"Result"] <- emo::ji("prohibited")
+                              			convert_res[step,"Error"] <- "Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with the error message."
+                              			KBAforms[step] <- NA
+                              			next}
+	  
+	  
   
               # Add checkbox results to the 8. CHECK tab
   check %<>%
@@ -156,42 +169,42 @@ for(step in 1:length(KBAforms)){
   
   # Prepare variables
         # 1. KBA Name
-  nationalName <- site$GENERAL[which(site$Field == "National name")]
+  nationalName <<- site$GENERAL[which(site$Field == "National name")]
   
         # 2. Location
               # Jurisdiction
-  juris <- site$GENERAL[which(site$Field == "Province or Territory")]
+  juris <<- site$GENERAL[which(site$Field == "Province or Territory")]
   
               # Latitude and Longitude
-  lat <- site$GENERAL[which(site$Field == "Latitude (dd.dddd)")] %>%
+  lat <<- site$GENERAL[which(site$Field == "Latitude (dd.dddd)")] %>%
     as.numeric(.) %>%
     round(., 3)
-  lat <- ifelse(is.na(lat), "coordinates unspecified", lat)
+  lat <<- ifelse(is.na(lat), "coordinates unspecified", lat)
   
-  lon <- site$GENERAL[which(site$Field == "Longitude (dd.dddd)")] %>%
+  lon <<- site$GENERAL[which(site$Field == "Longitude (dd.dddd)")] %>%
     as.numeric(.) %>%
     round(., 3)
-  lon <- ifelse(is.na(lon), "", paste0("/", lon))
+  lon <<- ifelse(is.na(lon), "", paste0("/", lon))
   
         # 3. KBA Scope
-  scope <- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
+  scope <<- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
                   "Global and National",
                   ifelse(grepl("g", home[13,4], fixed=T),
                          "Global",
                          "National"))
   
         # 4. Proposal Development Lead
-  proposalLead <- proposer$Entry[which(proposer$Field == "Name")]
+  proposalLead <<- proposer$Entry[which(proposer$Field == "Name")]
   
         # 7. Site Description
-  siteDescription <- site$GENERAL[which(site$Field == "Site description")]
+  siteDescription <<- site$GENERAL[which(site$Field == "Site description")]
   
         # 8. Assessment Details - KBA Trigger Species
-  includeGlobalTriggers <- ifelse(scope %in% c("Global and National", "Global"), "GLOBAL", "")
-  includeNationalTriggers <- ifelse(scope %in% c("Global and National", "National"), "NATIONAL", "")
+  includeGlobalTriggers <<- ifelse(scope %in% c("Global and National", "Global"), "GLOBAL", "")
+  includeNationalTriggers <<- ifelse(scope %in% c("Global and National", "National"), "NATIONAL", "")
   
         # 10. Delineation Rationale
-  delineationRationale <- site$GENERAL[which(site$Field == "Delineation rationale")]
+  delineationRationale <<- site$GENERAL[which(site$Field == "Delineation rationale")]
   
         # 12. General Review
   noFeedback <- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")]
@@ -210,8 +223,11 @@ for(step in 1:length(KBAforms)){
   
               # Check that at least one criterion is met
   if(is.na(criteriaMet)){
-    stop("No KBA Criteria met. Please revise your form and ensure that at least one criterion is met. If you believe that a KBA criterion should be met based on the information you provided in the form, contact Chloé and provide her with the error message.")
-  }
+	convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Error"] <- "No KBA Criteria met. Please revise your form and ensure that at least one criterion is met. If you believe that a KBA criterion should be met based on the information you provided in the form, contact Chloé and provide her with the error message."
+        KBAforms[step] <- NA
+        next
+	}
   
               # Criteria definitions
   criteriaInfo <- data.frame(CriteriaFull = strsplit(criteriaMet, "; ")[[1]]) %>%
@@ -289,7 +305,12 @@ for(step in 1:length(KBAforms)){
     filter(grepl("n", `Criteria met`, fixed=T)) %>%
     mutate(`Criteria met` = substr(`Criteria met`, start=2, stop=nchar(`Criteria met`)))
   
-  if(!(nrow(speciesAssessments_g) + nrow(speciesAssessments_n)) == nrow(speciesAssessments)){stop("Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message.")}
+  if(!(nrow(speciesAssessments_g) + nrow(speciesAssessments_n)) == nrow(speciesAssessments)){
+	convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Error"] <- "Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message."
+        KBAforms[step] <- NA
+        next
+	}
   rm(speciesAssessments)
   
               # Information for the footnotes
@@ -892,24 +913,30 @@ for(step in 1:length(KBAforms)){
   if(includeQuestions){
     if(includeReviewDetails){
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_Review_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_Review_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_Review_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_Review_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_Review_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_Review_National.docx'
         ## Google Drive: https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }else{
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_NoReview_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_NoReview_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_NoReview_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_NoReview_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_Questions_NoReview_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_Questions_NoReview_National.docx'
         ## Google Drive: https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }
@@ -917,44 +944,59 @@ for(step in 1:length(KBAforms)){
   }else{
     if(includeReviewDetails){
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_Review_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1ztHExERMAN6GfgHeu1y2jwI7PPfuspjf/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_Review_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/1ztHExERMAN6GfgHeu1y2jwI7PPfuspjf/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_Review_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1zxKFrxZjkc6VpNdBdkt80VSM5jg3-zXm/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_Review_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/1zxKFrxZjkc6VpNdBdkt80VSM5jg3-zXm/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_Review_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1zzD8vb0X8kq2_B_lXwhoxqxcj8JK9IIe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_Review_National.docx'
         ## Google Drive: https://docs.google.com/document/d/1zzD8vb0X8kq2_B_lXwhoxqxcj8JK9IIe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }else{
       if(scope == "Global and National"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_NoReview_GlobalNational.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1--Qh4Dif9Cr8RNS9u1ODcsVvXEDLBIEG/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_NoReview_GlobalNational.docx'
         ## Google Drive: https://docs.google.com/document/d/1--Qh4Dif9Cr8RNS9u1ODcsVvXEDLBIEG/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else if(scope == "Global"){
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_NoReview_Global.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1-31LLlC09UpJeH6fKFFLagPtZG8jxkzT/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_NoReview_Global.docx'
         ## Google Drive: https://docs.google.com/document/d/1-31LLlC09UpJeH6fKFFLagPtZG8jxkzT/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }else{
-        template <- 'joint_files/KBASummary_Template_NewForm_NoQuestions_NoReview_National.docx'
+        googledrive::drive_download("https://docs.google.com/document/d/1mjDJVcLVkYGpc961QApZNU7YvuN4RqJc/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+        template <- 'KBASummary_Template_NewForm_NoQuestions_NoReview_National.docx'
         ## Google Drive: https://docs.google.com/document/d/1mjDJVcLVkYGpc961QApZNU7YvuN4RqJc/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }
   }
-  
+
+
    #Compute document name   
    doc <- paste0("Summary_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)"), repl=""), "_", Sys.Date(), ".docx")
   
   # Save
   doc <- renderInlineCode(template, doc)
-  #Sys.sleep(10)
+  Sys.sleep(5)
   doc <- body_add_flextables(doc, doc, FT)
 
   KBAforms[step] <- doc
+  
+  # If the previous doc object was created, than the conversion was a success
+  sucess <- TRUE
 
+  # Compute the successful conversion into the table
+  if(sucess == TRUE) {convert_res[step,"Result"] <- emo::ji("check")}
+  
 }
-return(KBAforms)
+})
+
+  # List to store the summaries AND the result table that will be displayed on the Shiny app 
+  list_item <- list() # list to stock the summaries and a dataframe to see if it's a success or not
+  list_item[[1]] <- KBAforms
+  list_item[[2]] <- convert_res
+
+return(list_item)
 }
-
-
-form_conversion(KBAforms = KBAforms, includeQuestions = FALSE, includeReviewDetails = FALSE)
-KBAforms = "proposal/KBAProposal_Ojibway Prairie Complex and Greater Park Ecosystem- 08.27.2021-RR.xlsm"
-KBAforms = "proposal/KBAProposal_AishihikMeadow_Canada_Global_v2.xlsm"

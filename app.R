@@ -1,23 +1,38 @@
 library(shiny)
+library(tidyverse)
+library(magrittr)
+library(WordR)
+library(flextable)
+library(officer)
+library(openxlsx)
+library(lubridate)
+library(janitor)
+library(googledrive)
+library(emo)
 
+# Authenticate googledrive
+# Informations to authenticate are stored in an .Rprofile
+googledrive::drive_auth()
 
 # User interface
 ui <- fluidPage(
   sidebarLayout(
+
     sidebarPanel(      
-        h1("Instructions")
+        h3("README")
     ),
 
     mainPanel(
-      titlePanel("KBA proposals conversion"),
+      titlePanel("Creation of KBA summaries"),
       shinyjs::useShinyjs(),
-        # radioButtons to select weither you want to summarize one or multiple proposals
+
       fluidRow(
         column(width = 4,
-          radioButtons("proposalNumber", "Number of proposals to summarize",
-                      choices = list("One proposal" = "1prop", 
-                                  "Multiple proposals" = "xprop"),
-                      selected = "1prop"),
+          fileInput("file", label = "Upload your proposal(s)",
+                     placeholder = "or drop files here",
+                     multiple = TRUE,
+                     accept = c(".xlsx", ".xlsm", ".xls"),
+                     width = '100%')
         ),
         # radioButtons to select if you want to include question to experts
         column(width = 4,
@@ -34,26 +49,9 @@ ui <- fluidPage(
                         selected = "withoutreview"),
         ),
       ),
-      # input fields change depending on proposalNumber wanted
-        conditionalPanel(
-          condition = "input.proposalNumber == '1prop'",
-          fileInput("file1", "Select proposal to summarize",
-                     # select just selected sheet
-                     multiple = FALSE,
-                     accept = c(".xlsx", ".xlsm", ".xls"),
-                     width = '100%')
-        ),
-      
-        conditionalPanel(
-          condition = "input.proposalNumber == 'xprop'",
-          fileInput("file2", "Select proposals to summarize",
-                     multiple = TRUE,
-                     accept = c(".xlsx", ".xlsm", ".xls"),
-                     width = '100%')
-        ),
 
-      
-        actionButton("runScript", "Convert to summary"),
+        tableOutput("resTable"),
+        uiOutput('runButton'),
         downloadButton("downloadData", "Download")
     )
   )
@@ -66,16 +64,13 @@ source("R/KBA_summary.R")
 shinyjs::hide('downloadData')
 
   file_df <- reactive({
-    req(input$proposalNumber)
-    
-    if (input$proposalNumber == "1prop") {
-      req(input$file1)
-      df <- input$file1
-    }else if (input$proposalNumber == "xprop") {
-      req(input$file2)
-      df <- input$file2
-    }
-    
+    req(input$file)
+    df <- input$file
+  })
+
+  output$runButton <- renderUI({
+    if(is.null(file_df())) return()
+    actionButton("runScript", "Convert to summary")
   })
 
   askQuestion <- reactive({
@@ -88,32 +83,37 @@ shinyjs::hide('downloadData')
     if(input$reviews == "withoutreview") return(FALSE)
   })
 
-  r <- reactiveValues(test = NULL)
+  r <- reactiveValues(convertRes = NULL)
 
   observeEvent(input$runScript, {
-    r$test <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
+    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
     
+    output$resTable <- renderTable(r$convertRes[[2]])
+
     output$downloadData <- downloadHandler(
-      filename = function() "Summaries.zip",
-      content = function(file) {
+      filename = function() if(length(file_df()$name) == 1){
+        paste0(r$convertRes[[2]]$Name,".docx")
+      } else{"Summaries.zip"},
+      content = function(file) if(length(file_df()$name) == 1){
+        file.rename( from = r$convertRes[[1]], to = file )
+      } else{
           # create a temp folder for shp files
           temp_fold <- tempdir()
           zip_file <- paste0(temp_fold,"/Summaries.zip")
-          zip(zipfile = zip_file, files = r$test)
+          zip(zipfile = zip_file, files = r$convertRes[[1]])
           # copy the zip file to the file argument
           file.copy(zip_file, file, overwrite = TRUE)
           # remove all the files created
           file.remove(zip_file)
         }
-      
-      #function() zip(zipfile = "./Summaries", files = r$test)
+    
     )
+
+    rm(delineationRationale,includeGlobalTriggers,includeNationalTriggers,juris,lat,lon,nationalName,proposalLead,scope,siteDescription, envir = sys.frame())
     shinyjs::show('downloadData')
-    print('pouf')
 
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
   
 }
-
 
 shinyApp(ui, server)
