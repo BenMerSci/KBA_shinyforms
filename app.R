@@ -32,7 +32,7 @@ tags$head(tags$style(
 titlePanel(
 fluidRow(
     column(11, h1("Creation of KBA summaries")),
-    column(1, img(src = "Canada_KBA_transparent.png", height = 80, width = 120, href = "https://www.kbacanadawiki.org"))
+    column(1, img(src = "Canada_KBA_transparent.png", height = 80, width = 105, href = "https://www.kbacanadawiki.org"))
     
   )
 ),
@@ -92,7 +92,7 @@ fluidRow(
       ),
 
       br(),
-      
+
       fluidRow(
         column(width = 8, offset = 1, tableOutput("resTable")),
       )
