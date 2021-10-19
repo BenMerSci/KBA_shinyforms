@@ -17,27 +17,61 @@ googledrive::drive_auth()
 
 # User interface
 ui <- fluidPage(
-  theme = bs_theme(version = 5),
+
+tags$head(tags$style(
+    HTML('
+         #sidebar {
+            background-color: F9F2E5;
+        }
+
+        body, label, input, button, select { 
+          font-family: "vivaldi";
+        }')
+  )),
+
+titlePanel(
+fluidRow(
+    column(11, h1("Creation of KBA summaries")),
+    column(1, img(src = "Canada_KBA_transparent.png", height = 80, width = 120, href = "https://www.kbacanadawiki.org"))
+    
+  )
+),
+  theme = bs_theme("progress-bar-bg" = "orange", version = 5),
+
   sidebarLayout(
 
-    sidebarPanel(      
-        h3("README")
+    sidebarPanel(id = "sidebar", width = 4,  
+      h3("ReadMe", align = "center"),
+      "This Shiny application serves to convert Excel KBA proposals into Word KBA summaries for expert revisions.",
+      hr(),
+            h4("How to proceed:"),
+      h5("1- Upload the desired proposals to convert"),
+      h5("2- Select desired default parameters (questions/review)"),
+      h5("3- Click to summarize"),
+      h5("4- Result table of summarized proposal shows if they were a success"),
+      h5("5- Download!"),
+      hr(),
+      "Source code can be found here:"
+     # tags$i(class="fa fa-github fa-2x", style="color:#FAFAFA")
+      
     ),
 
     mainPanel(
-      titlePanel("Creation of KBA summaries"),
       shinyjs::useShinyjs(),
-
       fluidRow(
-        column(width = 4,
+        column(width = 6, offset = 1,
           fileInput("file", label = "Upload your proposal(s)",
                      placeholder = "or drop files here",
                      multiple = TRUE,
                      accept = c(".xlsx", ".xlsm", ".xls"),
                      width = '100%')
         ),
-        # radioButtons to select if you want to include question to experts
-        column(width = 4,
+      ), 
+
+      br(),
+
+      fluidRow(
+        column(width = 4, offset = 1,
           radioButtons("questions", "Including questions to expert",
                       choices = list("Yes" = "withquestion",
                                  "No" = "withoutquestion"),
@@ -52,9 +86,16 @@ ui <- fluidPage(
         ),
       ),
 
-        tableOutput("resTable"),
-        uiOutput('runButton'),
-        downloadButton("downloadData", "Download")
+      fluidRow(
+        column(width = 2, offset = 1, uiOutput('runButton')),
+        column(width = 2, offset = 1, downloadButton("downloadData", "Download"))
+      ),
+
+      br(),
+      
+      fluidRow(
+        column(width = 8, offset = 1, tableOutput("resTable")),
+      )
     )
   )
 )
