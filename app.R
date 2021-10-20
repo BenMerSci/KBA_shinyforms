@@ -153,7 +153,7 @@ shinyjs::hide('downloadData')
     
     )
 
-    rm(delineationRationale,includeGlobalTriggers,includeNationalTriggers,juris,lat,lon,nationalName,proposalLead,scope,siteDescription, envir = sys.frame())
+    rm(delineationRationale,includeGlobalTriggers,includeNationalTriggers,juris,lat,lon,nationalName,proposalLead,scope,siteDescription,noFeedback, envir = sys.frame())
     shinyjs::show('downloadData')
 
   }, ignoreNULL = TRUE, ignoreInit = TRUE)

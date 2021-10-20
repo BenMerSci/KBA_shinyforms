@@ -207,8 +207,8 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
   delineationRationale <<- site$GENERAL[which(site$Field == "Delineation rationale")]
   
         # 12. General Review
-  noFeedback <- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")]
-  noFeedback <- ifelse(is.na(noFeedback), "None", noFeedback)
+  noFeedback <<- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")]
+  noFeedback <<- ifelse(is.na(noFeedback), "None", noFeedback)
   
         # 13. Additional Site Information
   nominationRationale <- site$GENERAL[which(site$Field == "Rationale for nomination")]
