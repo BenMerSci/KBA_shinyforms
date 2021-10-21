@@ -15,19 +15,22 @@ library(emo)
 # Informations to authenticate are stored in an .Rprofile
 googledrive::drive_auth()
 
+
 # User interface
 ui <- fluidPage(
 
-tags$head(tags$style(
-    HTML('
-         #sidebar {
-            background-color: F9F2E5;
-        }
+theme = bs_theme("progress-bar-bg" = "orange", base_font = font_google("Lato")),
 
-        body, label, input, button, select { 
-          font-family: "vivaldi";
-        }')
-  )),
+#tags$head(tags$style(
+#    HTML('
+#         #sidebar {
+#            background-color: #F9F2E5;
+#        }
+#
+#        body, label, input, button, select { 
+#          font-family: "Helvetica";
+#        }')
+#  )),
 
 titlePanel(
 fluidRow(
@@ -36,7 +39,6 @@ fluidRow(
     
   )
 ),
-  theme = bs_theme("progress-bar-bg" = "orange", version = 5),
 
   sidebarLayout(
 
@@ -71,13 +73,14 @@ fluidRow(
       br(),
 
       fluidRow(
+        # Commented out the section to includeQuestions since it was judged obsolete
+        #column(width = 4, offset = 1,
+        #  radioButtons("questions", "Including questions to expert",
+        #              choices = list("Yes" = "withquestion",
+        #                         "No" = "withoutquestion"),
+        #              selected = "withoutquestion"),
+        #),
         column(width = 4, offset = 1,
-          radioButtons("questions", "Including questions to expert",
-                      choices = list("Yes" = "withquestion",
-                                 "No" = "withoutquestion"),
-                      selected = "withoutquestion"),
-        ),
-        column(width = 4,
         # radioButtons to select if you want to include reviews
           radioButtons("reviews", "Including review",
                         choices = list("Yes" = "withreview",
@@ -101,7 +104,7 @@ fluidRow(
 )
 
 server <- function(input, output) {
-
+bs_themer()
 source("R/KBA_summary.R")
 
 shinyjs::hide('downloadData')
@@ -116,10 +119,10 @@ shinyjs::hide('downloadData')
     actionButton("runScript", "Convert to summary")
   })
 
-  askQuestion <- reactive({
-    if(input$questions == "withquestion") return(TRUE)
-    if(input$questions == "withoutquestion") return(FALSE)
-  })
+  #askQuestion <- reactive({
+  #  if(input$questions == "withquestion") return(TRUE)
+  #  if(input$questions == "withoutquestion") return(FALSE)
+  #})
 
   askReview <- reactive({
     if(input$reviews == "withreview") return(TRUE)
@@ -130,7 +133,7 @@ shinyjs::hide('downloadData')
 
   observeEvent(input$runScript, {
     shinyjs::disable("runScript")
-    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, includeQuestions = askQuestion(), includeReviewDetails = askReview())
+    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, includeReviewDetails = askReview()) #includeQuestions = askQuestion()
     
     output$resTable <- renderTable(r$convertRes[[2]])
 

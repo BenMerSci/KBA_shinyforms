@@ -1,4 +1,4 @@
-form_conversion <- function(KBAforms, includeQuestions, includeReviewDetails){
+form_conversion <- function(KBAforms, includeReviewDetails){ #includeQuestions
 
 # Options
 options(scipen = 999)
@@ -910,38 +910,39 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
   
   #### Save KBA summary
   # Get template
-  if(includeQuestions){
-    if(includeReviewDetails){
-      if(scope == "Global and National"){
-        googledrive::drive_download("https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
-        template <- 'KBASummary_Template_NewForm_Questions_Review_GlobalNational.docx'
-        ## Google Drive: https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-      }else if(scope == "Global"){
-        googledrive::drive_download("https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
-        template <- 'KBASummary_Template_NewForm_Questions_Review_Global.docx'
-        ## Google Drive: https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-      }else{
-        googledrive::drive_download("https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
-        template <- 'KBASummary_Template_NewForm_Questions_Review_National.docx'
-        ## Google Drive: https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-      }
-    }else{
-      if(scope == "Global and National"){
-        googledrive::drive_download("https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
-        template <- 'KBASummary_Template_NewForm_Questions_NoReview_GlobalNational.docx'
-        ## Google Drive: https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-      }else if(scope == "Global"){
-        googledrive::drive_download("https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
-        template <- 'KBASummary_Template_NewForm_Questions_NoReview_Global.docx'
-        ## Google Drive: https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-      }else{
-        googledrive::drive_download("https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
-        template <- 'KBASummary_Template_NewForm_Questions_NoReview_National.docx'
-        ## Google Drive: https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-      }
-    }
-    
-  }else{
+# Commented out the section includeQuestions since it was judged obsolete
+#  if(includeQuestions){
+#    if(includeReviewDetails){
+#      if(scope == "Global and National"){
+#        googledrive::drive_download("https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+#        template <- 'KBASummary_Template_NewForm_Questions_Review_GlobalNational.docx'
+#        ## Google Drive: https://docs.google.com/document/d/11EtnJuLgEUfudzDPhpDMNUvKPHGvRgCe/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
+#      }else if(scope == "Global"){
+#        googledrive::drive_download("https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+#        template <- 'KBASummary_Template_NewForm_Questions_Review_Global.docx'
+#        ## Google Drive: https://docs.google.com/document/d/11IxNB0isZicHfZ9L6zPwxT-AfQk0AzM1/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
+#      }else{
+#        googledrive::drive_download("https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+#        template <- 'KBASummary_Template_NewForm_Questions_Review_National.docx'
+#        ## Google Drive: https://docs.google.com/document/d/11C8_DGI7RvmgyLh7z9iJNQ8ctiZWmzg3/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
+#      }
+#    }else{
+#      if(scope == "Global and National"){
+#        googledrive::drive_download("https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+#        template <- 'KBASummary_Template_NewForm_Questions_NoReview_GlobalNational.docx'
+#        ## Google Drive: https://docs.google.com/document/d/11RfjVzkFhYGEddAMJZwxj0U5se2kqLOD/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
+#      }else if(scope == "Global"){
+#        googledrive::drive_download("https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+#        template <- 'KBASummary_Template_NewForm_Questions_NoReview_Global.docx'
+#        ## Google Drive: https://docs.google.com/document/d/116c7UuaT7MGAXGoKnfgZ8G7GyPqc_Hsv/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
+#      }else{
+#        googledrive::drive_download("https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
+#        template <- 'KBASummary_Template_NewForm_Questions_NoReview_National.docx'
+#        ## Google Drive: https://docs.google.com/document/d/11NT6kSksHvmw6Kfn7PgD38rWtsHn_5RR/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
+#      }
+#    }
+#    
+#  }else{
     if(includeReviewDetails){
       if(scope == "Global and National"){
         googledrive::drive_download("https://docs.google.com/document/d/1ztHExERMAN6GfgHeu1y2jwI7PPfuspjf/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
@@ -971,7 +972,7 @@ if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cel
         ## Google Drive: https://docs.google.com/document/d/1mjDJVcLVkYGpc961QApZNU7YvuN4RqJc/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
       }
     }
-  }
+  
 
 
    #Compute document name   
