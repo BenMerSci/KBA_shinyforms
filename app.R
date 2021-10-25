@@ -18,19 +18,8 @@ googledrive::drive_auth()
 
 # User interface
 ui <- fluidPage(
-
+shinyjs::useShinyjs(),
 theme = bs_theme("progress-bar-bg" = "orange", base_font = font_google("Lato")),
-
-#tags$head(tags$style(
-#    HTML('
-#         #sidebar {
-#            background-color: #F9F2E5;
-#        }
-#
-#        body, label, input, button, select { 
-#          font-family: "Helvetica";
-#        }')
-#  )),
 
 titlePanel(
 fluidRow(
@@ -44,22 +33,21 @@ fluidRow(
 
     sidebarPanel(id = "sidebar", width = 4,  
       h3("ReadMe", align = "center"),
-      "This Shiny application serves to convert Excel KBA proposals into Word KBA summaries for expert revisions.",
+      "This Shiny application serves to convert KBA Canada proposal forms into KBA summaries for expert review.",
       hr(),
             h4("How to proceed:"),
       h5("1- Upload the desired proposals to convert"),
       h5("2- Select desired default parameters (questions/review)"),
       h5("3- Click to summarize"),
-      h5("4- Result table of summarized proposal shows if they were a success"),
+      h5("4- Check result table to see which proposals were correctly processed."),
       h5("5- Download!"),
       hr(),
-      "Source code can be found here:"
-     # tags$i(class="fa fa-github fa-2x", style="color:#FAFAFA")
-      
+      h6("Developed by Benjamin Mercier and Chloé Debyser for the KBA Canada Secretariat"),
+      h6(paste0("Source code can be found here:")),
+      tags$a(href="www.rstudio.com", "Click here!")
     ),
 
     mainPanel(
-      shinyjs::useShinyjs(),
       fluidRow(
         column(width = 6, offset = 1,
           fileInput("file", label = "Upload your proposal(s)",
@@ -67,25 +55,19 @@ fluidRow(
                      multiple = TRUE,
                      accept = c(".xlsx", ".xlsm", ".xls"),
                      width = '100%')
-        ),
+        )  
       ), 
 
       br(),
 
       fluidRow(
-        # Commented out the section to includeQuestions since it was judged obsolete
-        #column(width = 4, offset = 1,
-        #  radioButtons("questions", "Including questions to expert",
-        #              choices = list("Yes" = "withquestion",
-        #                         "No" = "withoutquestion"),
-        #              selected = "withoutquestion"),
-        #),
         column(width = 4, offset = 1,
-        # radioButtons to select if you want to include reviews
-          radioButtons("reviews", "Including review",
-                        choices = list("Yes" = "withreview",
-                                   "No" = "withoutreview"),
-                        selected = "withoutreview"),
+        # radioButtons to select which stage of review
+          radioButtons("stageRev", "Select review stage",
+                        choices = list("Technical review" = "technicalRev",
+                                   "General review" = "generalRev",
+                                   "Steering review" = "steeringRev"),
+                        selected = "technicalRev"),
         ),
       ),
 
@@ -103,10 +85,11 @@ fluidRow(
   )
 )
 
-server <- function(input, output) {
-bs_themer()
+server <- function(input, output, session) {
+
 source("R/KBA_summary.R")
 
+  
 shinyjs::hide('downloadData')
 
   file_df <- reactive({
@@ -119,21 +102,17 @@ shinyjs::hide('downloadData')
     actionButton("runScript", "Convert to summary")
   })
 
-  #askQuestion <- reactive({
-  #  if(input$questions == "withquestion") return(TRUE)
-  #  if(input$questions == "withoutquestion") return(FALSE)
-  #})
-
-  askReview <- reactive({
-    if(input$reviews == "withreview") return(TRUE)
-    if(input$reviews == "withoutreview") return(FALSE)
+  getReviewStage <- reactive({
+    if(input$stageRev == "technicalRev") return("technical")
+    if(input$stageRev == "generalRev") return("general")
+    if(input$stageRev == "steergingRev") return("steering")
   })
 
   r <- reactiveValues(convertRes = NULL)
 
   observeEvent(input$runScript, {
     shinyjs::disable("runScript")
-    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, includeReviewDetails = askReview()) #includeQuestions = askQuestion()
+    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, reviewStage = getReviewStage())
     
     output$resTable <- renderTable(r$convertRes[[2]])
 
