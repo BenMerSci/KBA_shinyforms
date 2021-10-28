@@ -15,7 +15,7 @@ library(emo)
 # Informations to authenticate are stored in an .Rprofile
 googledrive::drive_auth()
 
-
+# Create KBA summaries
 # User interface
 ui <- fluidPage(
 shinyjs::useShinyjs(),
@@ -56,7 +56,7 @@ fluidRow(
                      accept = c(".xlsx", ".xlsm", ".xls"),
                      width = '100%')
         )  
-      ), 
+      ),
 
       br(),
 
@@ -66,7 +66,7 @@ fluidRow(
           radioButtons("stageRev", "Select review stage",
                         choices = list("Technical review" = "technicalRev",
                                    "General review" = "generalRev",
-                                   "Steering review" = "steeringRev"),
+                                   "Steering Committee" = "steeringRev"),
                         selected = "technicalRev"),
         ),
       ),
