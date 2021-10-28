@@ -37,14 +37,14 @@ fluidRow(
       hr(),
             h4("How to proceed:"),
       h5("1- Upload the desired proposals to convert"),
-      h5("2- Select desired default parameters (questions/review)"),
-      h5("3- Click to summarize"),
+      h5("2- Select review stage"),
+      h5("3- Click convert button to summarize"),
       h5("4- Check result table to see which proposals were correctly processed."),
       h5("5- Download!"),
       hr(),
       h6("Developed by Benjamin Mercier and Chloé Debyser for the KBA Canada Secretariat"),
-      h6(paste0("Source code can be found here:")),
-      tags$a(href="www.rstudio.com", "Click here!")
+      h6("Source code", tags$a(href="https://github.com/BenMerSci/KBA_shinyforms", icon("github","fa-2x"))),
+      tags$style(".fa-github {color:#13294B}")
     ),
 
     mainPanel(
@@ -85,7 +85,7 @@ fluidRow(
   )
 )
 
-server <- function(input, output, session) {
+server <- function(input, output) {
 
 source("R/KBA_summary.R")
 
