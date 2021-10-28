@@ -31,21 +31,24 @@ for(step in 1:length(KBAforms)){
   success <- FALSE # set success to FALSE
   
   # Load KBA Canada Proposal Form
+        # Load full workbook
+  wb <- loadWorkbook(KBAforms[step])
+  
         # Visible sheets
-  home <- read.xlsx(KBAforms[step], sheet = "HOME")
-  proposer <- read.xlsx(KBAforms[step], sheet = "1. PROPOSER")
-  site <- read.xlsx(KBAforms[step], sheet = "2. SITE")
-  species <- read.xlsx(KBAforms[step], sheet = "3. SPECIES")
-  ecosystems <- read.xlsx(KBAforms[step], sheet = "4. ECOSYSTEMS & C")
-  threats <- read.xlsx(KBAforms[step], sheet = "5. THREATS")
-  review <- read.xlsx(KBAforms[step], sheet = "6. REVIEW")
-  citations <- read.xlsx(KBAforms[step], sheet = "7. CITATIONS")
-  check <- read.xlsx(KBAforms[step], sheet = "8. CHECK")
+  home <- read.xlsx(wb, sheet = "HOME")
+  proposer <- read.xlsx(wb, sheet = "1. PROPOSER")
+  site <- read.xlsx(wb, sheet = "2. SITE")
+  species <- read.xlsx(wb, sheet = "3. SPECIES")
+  ecosystems <- read.xlsx(wb, sheet = "4. ECOSYSTEMS & C")
+  threats <- read.xlsx(wb, sheet = "5. THREATS")
+  review <- read.xlsx(wb, sheet = "6. REVIEW")
+  citations <- read.xlsx(wb, sheet = "7. CITATIONS")
+  check <- read.xlsx(wb, sheet = "8. CHECK")
   
         # Invisible sheets
-  checkboxes <- read.xlsx(KBAforms[step], sheet = "checkboxes")
-  resultsSpecies <- read.xlsx(KBAforms[step], sheet = "results_species")
-  resultsEcosystems <- read.xlsx(KBAforms[step], sheet = "results_ecosystems")
+  checkboxes <- read.xlsx(wb, sheet = "checkboxes")
+  resultsSpecies <- read.xlsx(wb, sheet = "results_species")
+  resultsEcosystems <- read.xlsx(wb, sheet = "results_ecosystems")
 
   # Set the name of the form in the result table to be printed in Shiny
   if(is.na(site[1,"GENERAL"])) {convert_res[step,"Result"] <- emo::ji("prohibited")
