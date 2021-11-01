@@ -24,7 +24,7 @@ ui <- fluidPage(
   ),
 
 shinyjs::useShinyjs(),
-theme = bs_theme("progress-bar-bg" = "orange",),
+theme = bs_theme(bg = "#FFFAF0", fg = "#1D4044", base_font = font_google("Lato"), "progress-bar-bg" = "orange"),
 
  HTML("<h1>Creation of KBA summaries</h1>"),
 
@@ -38,9 +38,9 @@ theme = bs_theme("progress-bar-bg" = "orange",),
       "This Shiny application is intended to convert KBA Canada proposal forms into KBA summaries for expert review.",
       hr(),
       h4("How to proceed:"),
-      h5("1- Select review stage"),
-      h5("2- Upload the desired proposals to convert"),
-      h5("3- Click convert button to summarize"),
+      h5("1- Select review stage."),
+      h5("2- Upload the desired proposals to convert."),
+      h5("3- Click convert button to summarize."),
       h5("4- Check result table to see which proposals were correctly processed."),
       h5("5- Download!"),
       hr(),
