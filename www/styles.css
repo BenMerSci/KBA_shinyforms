@@ -1,0 +1,16 @@
+body, label, input, button, select { 
+    font-family: 'Helvetica', Helvetica;
+}
+
+
+h1, .h1 {
+    font-size: 30px;
+    background: url(./Canada_KBA_transparent.png) no-repeat;
+    background-size: contain;
+    background-position: left;
+    background-color: #2a484e;
+    color: #FFF;
+    padding: 20px;
+    font-family: 'Lato', sans-serif;
+    text-align: center;
+}
