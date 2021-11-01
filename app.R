@@ -18,26 +18,28 @@ googledrive::drive_auth()
 # Create KBA summaries
 # User interface
 ui <- fluidPage(
+
+    tags$head(
+    includeCSS("www/styles.css")
+  ),
+
 shinyjs::useShinyjs(),
-theme = bs_theme("progress-bar-bg" = "orange", base_font = font_google("Lato")),
+theme = bs_theme("progress-bar-bg" = "orange",),
 
-titlePanel(
-fluidRow(
-    column(11, h1("Creation of KBA summaries")),
-    column(1, img(src = "Canada_KBA_transparent.png", height = 80, width = 105, href = "https://www.kbacanadawiki.org"))
+ HTML("<h1>Creation of KBA summaries</h1>"),
+
+    br(),
+    br(),
     
-  )
-),
-
   sidebarLayout(
-
-    sidebarPanel(id = "sidebar", width = 4,  
+    
+    sidebarPanel(id = "sidebar", width = 3,  
       h3("ReadMe", align = "center"),
-      "This Shiny application serves to convert KBA Canada proposal forms into KBA summaries for expert review.",
+      "This Shiny application is intended to convert KBA Canada proposal forms into KBA summaries for expert review.",
       hr(),
-            h4("How to proceed:"),
-      h5("1- Upload the desired proposals to convert"),
-      h5("2- Select review stage"),
+      h4("How to proceed:"),
+      h5("1- Select review stage"),
+      h5("2- Upload the desired proposals to convert"),
       h5("3- Click convert button to summarize"),
       h5("4- Check result table to see which proposals were correctly processed."),
       h5("5- Download!"),
@@ -48,34 +50,42 @@ fluidRow(
     ),
 
     mainPanel(
-      fluidRow(
-        column(width = 6, offset = 1,
-          fileInput("file", label = "Upload your proposal(s)",
-                     placeholder = "or drop files here",
-                     multiple = TRUE,
-                     accept = c(".xlsx", ".xlsm", ".xls"),
-                     width = '100%')
-        )  
-      ),
 
-      br(),
-
-      fluidRow(
-        column(width = 4, offset = 1,
-        # radioButtons to select which stage of review
-          radioButtons("stageRev", "Select review stage",
-                        choices = list("Technical review" = "technicalRev",
+    fluidRow(
+      column(width = 7, offset = 1,
+        wellPanel(
+          fluidRow(
+            column(width = 8,
+              radioButtons("stageRev", h4("Select review stage"),
+                          choices = list("Technical review" = "technicalRev",
                                    "General review" = "generalRev",
                                    "Steering Committee" = "steeringRev"),
-                        selected = "technicalRev"),
-        ),
-      ),
+                          selected = "technicalRev", inline = TRUE)
+            )
+          ),
+      
+          fluidRow(
+            column(width = 8,
+              fileInput("file", label = h4("Upload your proposal(s)"),
+                         placeholder = "or drop files here",
+                         multiple = TRUE,
+                         accept = c(".xlsx", ".xlsm", ".xls"),
+                         width = '100%')
+            )
+          )
+        ) 
+      )
+    ),
+
+
+
 
       fluidRow(
         column(width = 2, offset = 1, uiOutput('runButton')),
         column(width = 2, offset = 1, downloadButton("downloadData", "Download"))
       ),
 
+      br(),
       br(),
 
       fluidRow(
