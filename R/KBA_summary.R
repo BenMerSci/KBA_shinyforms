@@ -1,5 +1,6 @@
 form_conversion <- function(KBAforms, reviewStage){
-
+  
+withProgress(message = "Converting forms", value = 0, {
 # Options
 options(scipen = 999)
 
@@ -22,9 +23,14 @@ colnames(convert_res) <- c("Name","Result","Error")
 
 #### Prepare the Summary(ies) ####
 
-withProgress(message = "Converting forms", value = 0, {
+#withProgress(message = "Converting forms", value = 0, {
 
 for(step in 1:length(KBAforms)){
+
+if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)) {convert_res[step,"Result"] <- emo::ji("prohibited")
+                                                    convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA proposal form")
+                                                    KBAforms[step] <- NA
+                                                    next}
 
   incProgress(1/length(KBAforms), detail = paste("form number ", step))
 
@@ -34,6 +40,12 @@ for(step in 1:length(KBAforms)){
         # Load full workbook
   wb <- loadWorkbook(KBAforms[step])
   
+  if(sum(c("HOME", "1. PROPOSER", "2. SITE", "3. SPECIES","4. ECOSYSTEMS & C", "5. THREATS", "6. REVIEW", "7. CITATIONS", "8. CHECK") %in% getSheetNames(KBAforms)) != 9) {
+    convert_res[step, "Result"] <- emo::ji("prohibited")
+    convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA Canada proposal form. If you need a summary for a Legacy single-site form, contact Chloé.")
+    KBAforms[step] <- NA
+    next
+  }
         # Visible sheets
   home <- read.xlsx(wb, sheet = "HOME")
   proposer <- read.xlsx(wb, sheet = "1. PROPOSER")
