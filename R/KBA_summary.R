@@ -40,7 +40,7 @@ if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)) {convert_res[step,"Result"] <
         # Load full workbook
   wb <- loadWorkbook(KBAforms[step])
   
-  if(sum(c("HOME", "1. PROPOSER", "2. SITE", "3. SPECIES","4. ECOSYSTEMS & C", "5. THREATS", "6. REVIEW", "7. CITATIONS", "8. CHECK") %in% getSheetNames(KBAforms)) != 9) {
+  if(sum(c("HOME", "1. PROPOSER", "2. SITE", "3. SPECIES","4. ECOSYSTEMS & C", "5. THREATS", "6. REVIEW", "7. CITATIONS", "8. CHECK") %in% getSheetNames(KBAforms[step])) != 9) {
     convert_res[step, "Result"] <- emo::ji("prohibited")
     convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA Canada proposal form. If you need a summary for a Legacy single-site form, contact Chloé.")
     KBAforms[step] <- NA
