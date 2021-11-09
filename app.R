@@ -26,12 +26,12 @@ theme = bs_theme(bg = "#f6f6f6", fg = "#1D4044", base_font = font_google("Lato")
 # Change web window title + adding the CSS styling 
   tags$head(
     HTML("<title> Create KBA summary </title>"),
-    tags$div(HTML("<a id='KBA_logo' href='https://kbacanadawiki.org/'><img src='./Canada_KBA_transparent_white.png' alt='KBA_logo' style='position: fixed; top: 4%; left: 6%; width: 5%; height: 5%;'></a>")),
+    #tags$div(HTML("<a id='KBA_logo' href='https://kbacanadawiki.org/'><img src='./Canada_KBA_transparent_white.png' alt='KBA_logo' style='position: fixed; top: 4%; left: 6%; width: 5%; height: 5%;'></a>")),
     includeCSS("www/styles.css")
   ),
 
 # Add the titlepanel which is modified in the .css file
-titlePanel(h1("Creation of KBA summaries", class = "h1")),
+HTML("<h1><a href='https://kbacanadawiki.org/'><img src='./Canada_KBA_transparent_white.png' style='position: relative; float: left; left: 6%; padding-bottom: 10px; width: 5%; height: 5%;' alt='KBA_logo'/></a>Creation of KBA summaries</h1>"),
 
 # Spaces before the panels
     br(),

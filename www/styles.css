@@ -28,9 +28,10 @@ h1, .h1 {
     background-position: center;
     color: #ffff;
     font-family: 'Lato', sans-serif;
-    padding: 20px;
+    padding: 25px;
     margin-right: 0px;
     text-align: center;
+    position: relative;
 }
 
 h2, .h2 {
@@ -86,7 +87,7 @@ a, .a {
 
 .well {
     height: 700px;
-    overflow: visible;
+    overflow:visible;
 }
 
 .well_scroll {
