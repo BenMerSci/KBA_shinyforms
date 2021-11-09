@@ -1,16 +1,117 @@
+html,body {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+    overflow-x: hidden; 
+}
+
+.container-fluid {
+    width: 100%;
+padding-right: 0px;
+padding-left: 0px;
+margin-right: 0px;
+margin-left: 0px
+}
+
 body, label, input, button, select { 
-    font-family: 'Helvetica', Helvetica;
+    font-family: 'Lato', sans-serif;
 }
 
 
+/*Modify headers*/
 h1, .h1 {
-    font-size: 30px;
-    background: url(./Canada_KBA_transparent.png) no-repeat;
-    background-size: contain;
-    background-position: left;
-    background-color: #31504c;
-    color: #FFF;
-    padding: 20px;
+    font-size: 40px;
+    background: url("./KBA_PEI.png");
+    background-repeat: no-repeat;
+    background-size: 100%;
+    background-position: center;
+    color: #ffff;
     font-family: 'Lato', sans-serif;
+    padding: 20px;
+    margin-right: 0px;
     text-align: center;
+}
+
+h2, .h2 {
+    font-size: 33px;
+    font-family: 'Lato' sans-serif;
+    text-align: center;
+
+}
+
+h3, .h3 {
+    font-size: 25px;
+    font-family: 'Lato' sans-serif;
+}
+
+h4, .h4 {
+    font-size: 20px;
+    font-family: 'Lato' sans-serif;
+}
+
+h5, .h5 {
+    font-size: 17px;
+    font-family: 'Lato' sans-serif;
+}
+
+h6, .h6 {
+    font-size: 17px;
+    font-family: 'Lato' sans-serif;
+    text-align: right;
+    bottom: 2px;
+}
+
+a, .a {
+    color: #D5D5D5;
+}
+
+/* Personnal tag modification */
+
+/* Progress bar */
+.shiny-notification {
+  position: fixed;
+  top: 89%;
+  left: 4%;
+  right: 4%;
+  width: calc(100%-8%);
+}
+
+/* Little tweak to use the `offset` argument from column() to center the 3 wellPanel in the UI */
+/* Since the page is width=12 and the 3 wellPanels together were width = 11, i tweaked the offset=1 argument 
+    to make it offset the half of a column, so the elements are centered */
+.offset-md-1 {
+    margin-left: 4.16665%;
+}
+
+.well {
+    height: 700px;
+    overflow: visible;
+}
+
+.well_scroll {
+    height: 700px;
+    overflow: scroll;
+}
+
+#downloadData {
+    background-color: #93BB04;
+}
+
+#stageRev {
+    /*text-align: center;*/
+    font-size: 20px;
+}
+
+.footer {
+    font-size: 14px;
+    background-color: #333333;
+    color: #999999;
+    padding: 10px;
+    max-height:40px;
+    text-align: center;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    border-bottom: 2px solid orange;
 }
