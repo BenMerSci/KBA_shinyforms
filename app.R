@@ -170,18 +170,15 @@ shinyjs::hide("downloadData")
           # remove all the files created
           file.remove(zip_file)
         }
-    
+
     )
 
     rm(delineationRationale,includeGlobalTriggers,includeNationalTriggers,juris,lat,lon,nationalName,proposalLead,scope,siteDescription,noFeedback, envir = sys.frame())
     shinyjs::show('downloadData')
 
   }, ignoreNULL = TRUE, ignoreInit = TRUE)
-  
+
 }
 
 
 shinyApp(ui, server)
-
-
-
