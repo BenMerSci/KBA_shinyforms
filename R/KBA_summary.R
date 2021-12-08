@@ -62,15 +62,37 @@ if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)) {convert_res[step,"Result"] <
   resultsSpecies <- read.xlsx(wb, sheet = "results_species")
   resultsEcosystems <- read.xlsx(wb, sheet = "results_ecosystems")
 
-  # Set the name of the form in the result table to be printed in Shiny
-  if(is.na(site[1,"GENERAL"])) {convert_res[step,"Result"] <- emo::ji("prohibited")
-                              convert_res[step,"Error"] <- "KBA site must have a name."
-                              KBAforms[step] <- NA
-                              next}
-
-  # Assign the name of the site to the name in result table
-  convert_res[step,"Name"] <- site[1,"GENERAL"]
-
+  # Handle the site name
+        # Get the name
+  name <- site[1,"GENERAL"]
+  
+        # Check that the name exists
+  if(is.na(name)){
+    convert_res[step,"Result"] <- emo::ji("prohibited")
+    convert_res[step,"Error"] <- "KBA site must have a name."
+    KBAforms[step] <- NA
+    next
+  }
+  
+        # Assign the name of the site to the name in result table
+  convert_res[step,"Name"] <- name
+  
+        # Check that the name is not too long
+  if(nchar(name)>255){
+    convert_res[step,"Result"] <- emo::ji("prohibited")
+    convert_res[step,"Error"] <- "KBA name is too long."
+    KBAforms[step] <- NA
+    next
+  }
+  
+        # Check that the name does not contain any paragraph symbols
+  if(grepl("\n", name, fixed=T)){
+    convert_res[step,"Result"] <- emo::ji("prohibited")
+    convert_res[step,"Error"] <- "KBA name should not include paragraph breaks."
+    KBAforms[step] <- NA
+    next
+  }
+  
     # Get form version number
   formVersion <- home[1,1] %>% substr(., start=9, stop=nchar(.)) %>% as.numeric()
   
