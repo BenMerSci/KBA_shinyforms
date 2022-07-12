@@ -94,8 +94,17 @@ form_conversion <- function(KBAforms, reviewStage){
         next
       }
       
-        # Get form version number
+      # Form version number
+            # Get version
       formVersion <- home[1,1] %>% substr(., start=9, stop=nchar(.)) %>% as.numeric()
+      
+            # Check compatibility
+      if(!formVersion %in% c(1, 1.1)){
+        convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Error"] <- "Form version not supported. Please contact Chloé and provide her with this error message."
+        KBAforms[step] <- NA
+        next
+      }
       
       # Format the sheets
             # 1. PROPOSER
@@ -105,13 +114,17 @@ form_conversion <- function(KBAforms, reviewStage){
         filter(!is.na(Field))
       
             # 2. SITE
+                  # General
       site %<>%
         .[, 2:4] %>%
         rename(Field = X2) %>%
         filter(!Field == "Ongoing                                                                                           Needed                                                  ")
       
+                  # Conservation actions
+      actionsCol <- which(colnames(checkboxes) == "2..Conservation.actions")
+      
       actions <- checkboxes %>%
-        .[, 5:7]
+        .[, actionsCol:(actionsCol+2)]
       colnames(actions) <- actions[1,]
       actions %<>%
         .[2:nrow(.),]
@@ -130,13 +143,15 @@ form_conversion <- function(KBAforms, reviewStage){
         unique() %>%
         .[which(!. == "Criteria met")]
       if(!length(ecosystems) == 0){convert_res[step,"Result"] <- emo::ji("prohibited")
-                                  convert_res[step,"Error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with the error message."
+                                  convert_res[step,"Error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with this error message."
                                   KBAforms[step] <- NA
                                   next}
             
             # 5. THREATS
                   # Verify whether "No Threats" checkbox is checked
-      noThreats <- checkboxes[2,9] %>% as.logical()
+      noThreatsCol <- which(colnames(checkboxes) == "5..Threats")
+      
+      noThreats <- checkboxes[2, (noThreatsCol+1)] %>% as.logical()
       
                   # If there are threats, get that information
       if(!noThreats){
@@ -146,14 +161,18 @@ form_conversion <- function(KBAforms, reviewStage){
       }  
          
             # 6. REVIEW
+                  # General
       review %<>%
         drop_na(X2) %>%
         fill(`INSTRUCTIONS:`)
     
+                  # Technical review
       technicalReview <- review %>%
         filter(`INSTRUCTIONS:` == 1) %>%
         select(-`INSTRUCTIONS:`)
+      
       colnames(technicalReview) <- technicalReview[2,]
+      
       if(nrow(technicalReview) > 2){
         technicalReview %<>% .[3:nrow(.),]
       }else{
@@ -161,22 +180,29 @@ form_conversion <- function(KBAforms, reviewStage){
         technicalReview %<>% .[3:nrow(.),]
       }
       
+                  # General review
       generalReview <- review %>%
         filter(`INSTRUCTIONS:` == 2) %>%
-        select(-c(`INSTRUCTIONS:`, X5))
+        select(-c(`INSTRUCTIONS:`))
+      
+      if(is.na(generalReview[2,4])){
+        generalReview %<>% select(-X5)
+      }
+      
       colnames(generalReview) <- generalReview[2,]
+      
       if(nrow(generalReview) > 2){
         generalReview %<>% .[3:nrow(.),]
       }else{
-        generalReview[3,] <- c("No reviewers listed", "", "")
+        generalReview[3,] <- c("No reviewers listed", rep("", (ncol(generalReview)-1)))
         generalReview %<>% .[3:nrow(.),]
       }
        
             # 7. CITATIONS
-      colnames(citations) <- citations[2,]
+      colnames(citations) <- tolower(citations[2,])
       citations %<>%
         .[3:nrow(.), 1:4] %>%
-        filter(!is.na(`Short Citation`))
+        filter(!is.na(`short citation`))
       
             # 8. CHECK
                   # Column names
@@ -187,17 +213,20 @@ form_conversion <- function(KBAforms, reviewStage){
         .[2:nrow(.),] %>%
         select("8..Checks") %>%
         drop_na()
-        
-    if(formVersion %in% c(1, 1.1)){check_checkboxes %<>% .[c(1:5,7:nrow(.)),]} # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
-    
+      
+      if(formVersion %in% c(1, 1.1)){
+        check_checkboxes %<>% .[c(1:5,7:nrow(.)),] # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
+      }else{
+        check_checkboxes %<>% pull(`8..Checks`)
+      }
           
                   # Verify that there are as many checkbox results as there are checkboxes
-      if(!(nrow(check) == length(check_checkboxes))){convert_res[step,"Result"] <- emo::ji("prohibited")
-                                  			convert_res[step,"Error"] <- "Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with the error message."
-                                  			KBAforms[step] <- NA
-                                  			next}
-    	  
-    	  
+      if(!(nrow(check) == length(check_checkboxes))){
+        convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Error"] <- "Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with this error message."
+        KBAforms[step] <- NA
+        next
+      }
       
                   # Add checkbox results to the 8. CHECK tab
       check %<>%
