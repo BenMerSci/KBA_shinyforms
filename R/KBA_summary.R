@@ -14,7 +14,6 @@ form_conversion <- function(KBAforms, reviewStage){
     colnames(convert_res) <- c("Name","Result","Error")
     
     #### Prepare the Summary(ies) ####
-    
     for(step in 1:length(KBAforms)){
     
       if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)){
@@ -127,6 +126,10 @@ form_conversion <- function(KBAforms, reviewStage){
         filter(!is.na(`Common name`)) %>%
         mutate(`Common name` = trimws(`Common name`),
                `Scientific name` = trimws(`Scientific name`))
+      
+      if(formVersion %in% c(1, 1.1)){
+        colnames(species)[which(colnames(species) == "RU Source")] <- "RU source"
+      }
       
             # 4. ECOSYSTEMS & C
       ecosystems %<>%
@@ -330,7 +333,6 @@ form_conversion <- function(KBAforms, reviewStage){
         summarise(speciesNames = paste(`Scientific name`, collapse=", "), .groups="drop") %>%
         left_join(criteriaInfo, ., by=c("CriteriaFull" = "Criteria met"))
       
-      # PICK UP HERE
                   # Flextable
       criteriaInfo_ft <- criteriaInfo %>%
         mutate(Label = "") %>%
@@ -362,7 +364,7 @@ form_conversion <- function(KBAforms, reviewStage){
                TotalEstimate_Max = as.character(`Max reference estimate`)) %>%
         mutate(AssessmentParameter = sapply(`Assessment parameter`, function(x) str_to_sentence(substr(x, start=str_locate(x, "\\)")[1,1]+2, stop=nchar(x))))) %>%
         mutate(AssessmentParameter = ifelse(AssessmentParameter %in% c("Area of occupancy", "Extent of suitable habitat", "Range"), paste(AssessmentParameter, "(km2)"), AssessmentParameter)) %>%
-        select(`Scientific name`, Status, `Criteria met`, `Reproductive Units (RU)`, `RU Source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite)
+        select(`Scientific name`, Status, `Criteria met`, `Reproductive Units (RU)`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite)
       
                   # Separate global and national assessments
       speciesAssessments_g <- speciesAssessments %>%
@@ -383,7 +385,7 @@ form_conversion <- function(KBAforms, reviewStage){
       
                   # Information for the footnotes
       footnotes_g <- speciesAssessments_g %>%
-        select(`RU Source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`) %>%
+        select(`RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`) %>%
         mutate(`Derivation of best estimate` = sapply(`Derivation of best estimate`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>% 
         mutate(`Explanation of site estimates` = sapply(`Explanation of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Sources of site estimates` = sapply(`Sources of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
@@ -391,10 +393,10 @@ form_conversion <- function(KBAforms, reviewStage){
         mutate(`Sources of reference estimates` = sapply(`Sources of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
         mutate(Reference_Source = paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`, " Source(s) of global estimate(s): ", `Sources of reference estimates`)) %>%
-        select(`RU Source`, Site_Source, Reference_Source)
+        select(`RU source`, Site_Source, Reference_Source)
       
       footnotes_n <- speciesAssessments_n %>%
-        select(`RU Source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`) %>%
+        select(`RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`) %>%
         mutate(`Derivation of best estimate` = sapply(`Derivation of best estimate`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>% 
         mutate(`Explanation of site estimates` = sapply(`Explanation of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Sources of site estimates` = sapply(`Sources of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
@@ -402,12 +404,12 @@ form_conversion <- function(KBAforms, reviewStage){
         mutate(`Sources of reference estimates` = sapply(`Sources of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
         mutate(Reference_Source = paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`, " Source(s) of national estimate(s): ", `Sources of reference estimates`)) %>%
-        select(`RU Source`, Site_Source, Reference_Source)
+        select(`RU source`, Site_Source, Reference_Source)
       
                   # Information for the main table
-      speciesAssessments_g %<>% select(-c(`RU Source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`))
+      speciesAssessments_g %<>% select(-c(`RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`))
       
-      speciesAssessments_n %<>% select(-c(`RU Source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`))
+      speciesAssessments_n %<>% select(-c(`RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`))
       
                   # Assess whether min/max should be retained
                         # Remove min/max values that are identical to each other
@@ -871,6 +873,7 @@ form_conversion <- function(KBAforms, reviewStage){
       
       # General Review
       generalReview_ft <- generalReview %>%
+        .[,1:3] %>%
         flextable() %>%
         width(j=colnames(.), width=c(2.4,3.6,3)) %>%
         align(align = "center", part="header") %>%
@@ -959,8 +962,8 @@ form_conversion <- function(KBAforms, reviewStage){
       }
       
       citations_ft <- citations %>%
-        arrange(`Long Citation`) %>%
-        select(`Long Citation`) %>%
+        arrange(`long citation`) %>%
+        select(`long citation`) %>%
         flextable() %>%
         delete_part(part = "header") %>%
         width(j=colnames(.), width=9) %>%
