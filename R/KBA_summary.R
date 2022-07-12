@@ -16,6 +16,7 @@ form_conversion <- function(KBAforms, reviewStage){
           # Criteria definitions
     googledrive::drive_download("https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
     criteria_definitions <- read.xlsx("KBACriteria_Definitions.xlsx")
+    colnames(criteria_definitions) <- c("Criteria", "Global", "National")
     ## Google Drive: https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
 
     # Create a dataframe to store the success/failure state of each conversion
@@ -26,14 +27,16 @@ form_conversion <- function(KBAforms, reviewStage){
     
     for(step in 1:length(KBAforms)){
     
-      if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)) {convert_res[step,"Result"] <- emo::ji("prohibited")
-                                                          convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA proposal form")
-                                                          KBAforms[step] <- NA
-                                                          next}
+      if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)){
+        convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA proposal form")
+        KBAforms[step] <- NA
+        next
+      }
     
       incProgress(1/length(KBAforms), detail = paste("form number ", step))
     
-      success <- FALSE # set success to FALSE
+      success <- FALSE # Set success to FALSE
       
       # Load KBA Canada Proposal Form
             # Load full workbook
@@ -246,7 +249,7 @@ form_conversion <- function(KBAforms, reviewStage){
         round(., 3)
       lat <<- ifelse(is.na(lat), "coordinates unspecified", lat)
       
-      lon <<- site$GENERAL[which(site$Field == "Longitude (dd.dddd)")] %>%
+      lon <<- site$GENERAL[which((site$Field == "Longitude (dd.dddd)" | site$Field == "Longitude (ddd.dddd)"))] %>%
         as.numeric(.) %>%
         round(., 3)
       lon <<- ifelse(is.na(lon), "", paste0("/", lon))
@@ -259,7 +262,11 @@ form_conversion <- function(KBAforms, reviewStage){
                              "National"))
       
             # 4. Proposal Development Lead
-      proposalLead <<- proposer$Entry[which(proposer$Field == "Name")]
+      if(formVersion %in% c(1, 1.1)){
+        proposalLead <<- proposer$Entry[which(proposer$Field == "Name")]
+      }else{
+        proposalLead <<- proposer$Entry[which(proposer$Field == "Name of proposal development lead")]
+      }
       
             # 7. Site Description
       siteDescription <<- site$GENERAL[which(site$Field == "Site description")]
@@ -278,8 +285,14 @@ form_conversion <- function(KBAforms, reviewStage){
             # 13. Additional Site Information
       nominationRationale <- site$GENERAL[which(site$Field == "Rationale for nomination")]
       additionalBiodiversity <- site$GENERAL[which(site$Field == "Additional biodiversity")]
-      percentProtected <- site$GENERAL[which(site$Field == "Percent protected")]
       customaryJurisdiction <- site$GENERAL[which(site$Field == "Customary jurisdiction")]
+      
+      if(formVersion %in% c(1, 1.1)){
+        percentProtected <- site$GENERAL[which(site$Field == "Percent protected")]
+      }else{
+        percentProtected <- "Unspecified"
+        customaryJurisdictionSource <- site$GENERAL[which(site$Field == "Customary jurisdiction source")]
+      }
       
       # Prepare flextables
             # Criteria information
