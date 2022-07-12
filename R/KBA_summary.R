@@ -12,19 +12,17 @@ form_conversion <- function(KBAforms, reviewStage){
      mutate(IUCN_AssessmentDate = convertToDate(IUCN_AssessmentDate), COSEWIC_DATE = convertToDate(COSEWIC_DATE), G_RANK_REVIEW_DATE = convertToDate(G_RANK_REVIEW_DATE), N_RANK_REVIEW_DATE = convertToDate(N_RANK_REVIEW_DATE)) %>%
       select(NATIONAL_SCIENTIFIC_NAME, Endemism, IUCN_CD, IUCN_AssessmentDate, COSEWIC_STATUS, COSEWIC_DATE, ROUNDED_G_RANK, G_RANK_REVIEW_DATE, ROUNDED_N_RANK, N_RANK_REVIEW_DATE)
     ## Google Drive: https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-    
+
           # Criteria definitions
     googledrive::drive_download("https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
     criteria_definitions <- read.xlsx("KBACriteria_Definitions.xlsx")
     ## Google Drive: https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true
-    
+
     # Create a dataframe to store the success/failure state of each conversion
     convert_res <- data.frame(matrix(ncol=3))
     colnames(convert_res) <- c("Name","Result","Error")
     
     #### Prepare the Summary(ies) ####
-    
-    #withProgress(message = "Converting forms", value = 0, {
     
     for(step in 1:length(KBAforms)){
     
@@ -99,7 +97,7 @@ form_conversion <- function(KBAforms, reviewStage){
       formVersion <- home[1,1] %>% substr(., start=9, stop=nchar(.)) %>% as.numeric()
       
             # Check compatibility
-      if(!formVersion %in% c(1, 1.1)){
+      if(!formVersion %in% c(1, 1.1, 1.2)){
         convert_res[step,"Result"] <- emo::ji("prohibited")
         convert_res[step,"Error"] <- "Form version not supported. Please contact Chloé and provide her with this error message."
         KBAforms[step] <- NA
@@ -1012,7 +1010,7 @@ form_conversion <- function(KBAforms, reviewStage){
           }
         }
     
-       #Compute document name   
+       # Compute document name   
        doc <- paste0("Summary_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)"), repl=""), "_", Sys.Date(), ".docx")
       
       # Save
