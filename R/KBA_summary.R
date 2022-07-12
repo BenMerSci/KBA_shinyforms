@@ -28,10 +28,10 @@ form_conversion <- function(KBAforms, reviewStage){
     
     for(step in 1:length(KBAforms)){
     
-    if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)) {convert_res[step,"Result"] <- emo::ji("prohibited")
-                                                        convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA proposal form")
-                                                        KBAforms[step] <- NA
-                                                        next}
+      if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)) {convert_res[step,"Result"] <- emo::ji("prohibited")
+                                                          convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA proposal form")
+                                                          KBAforms[step] <- NA
+                                                          next}
     
       incProgress(1/length(KBAforms), detail = paste("form number ", step))
     
@@ -100,18 +100,18 @@ form_conversion <- function(KBAforms, reviewStage){
       # Format the sheets
             # 1. PROPOSER
       proposer %<>%
-        .[ ,2:3] %>%
+        .[, 2:3] %>%
         rename(Field = X2, Entry = X3) %>%
         filter(!is.na(Field))
       
             # 2. SITE
       site %<>%
-        .[ , 2:4] %>%
+        .[, 2:4] %>%
         rename(Field = X2) %>%
         filter(!Field == "Ongoing                                                                                           Needed                                                  ")
       
       actions <- checkboxes %>%
-        .[,5:7]
+        .[, 5:7]
       colnames(actions) <- actions[1,]
       actions %<>%
         .[2:nrow(.),]
