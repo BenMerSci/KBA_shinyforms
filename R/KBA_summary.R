@@ -282,9 +282,11 @@ form_conversion <- function(KBAforms, reviewStage){
       
       if(formVersion %in% c(1, 1.1)){
         percentProtected <- site$GENERAL[which(site$Field == "Percent protected")]
+        siteHistory <- NA
       }else{
         percentProtected <- "Unspecified"
         customaryJurisdictionSource <- site$GENERAL[which(site$Field == "Customary jurisdiction source")]
+        siteHistory <- site$GENERAL[which(site$Field == "Site history")]
       }
       
       # Prepare flextables
@@ -893,6 +895,11 @@ form_conversion <- function(KBAforms, reviewStage){
             # Nomination rationale
       additionalInfo[1, ] <- c("Rationale for site nomination", nominationRationale)
       
+            # Site history
+      if(!is.na(siteHistory)){
+        additionalInfo[2, ] <- c("Site history", siteHistory)
+      }
+      
             # Assessed elements that did not meet KBA criteria
       speciesNotTriggers <- species %>%
         filter(is.na(`Criteria met`)) %>%
@@ -900,20 +907,20 @@ form_conversion <- function(KBAforms, reviewStage){
         unique() %>%
         paste(., collapse=", ")
     
-      additionalInfo[2, ] <- c("Biodiversity elements that were assessed but did not meet KBA criteria", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Biodiversity elements that were assessed but did not meet KBA criteria", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
       
             # Additional biodiversity
-      additionalInfo[3, ] <- c("Additional biodiversity at the site", ifelse(is.na(additionalBiodiversity), "-", additionalBiodiversity))
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Additional biodiversity at the site", ifelse(is.na(additionalBiodiversity), "-", additionalBiodiversity))
       
             # Percent protected
-      additionalInfo[4, ] <- c("Percent of site covered by protected areas", percentProtected)
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Percent of site covered by protected areas", percentProtected)
       
             # Customary jurisdiction at site
-      additionalInfo[5, ] <- c("Customary jurisdiction at site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Customary jurisdiction at site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
       
             # Customary jurisdiction source
       if(!formVersion %in% c(1, 1.1)){
-        additionalInfo[6, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "_", customaryJurisdictionSource))
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "_", customaryJurisdictionSource))
       }
       
             # Ongoing conservation actions
@@ -923,11 +930,7 @@ form_conversion <- function(KBAforms, reviewStage){
         substr(., start=5, stop=nchar(.)) %>%
         paste(., collapse="; ")
       
-      if(formVersion %in% c(1, 1.1)){
-        additionalInfo[6, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
-      }else{
-        additionalInfo[7, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
-      }
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
       
             # Ongoing threats
       if(!noThreats){
@@ -942,11 +945,7 @@ form_conversion <- function(KBAforms, reviewStage){
         threatText <- "-"
       }
       
-      if(formVersion %in% c(1, 1.1)){
-        additionalInfo[7, ] <- c("Ongoing threats", threatText)
-      }else{
-        additionalInfo[8, ] <- c("Ongoing threats", threatText)
-      }
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Ongoing threats", threatText)
       
             # Conservation actions needed
       neededActions <- actions %>%
@@ -955,11 +954,7 @@ form_conversion <- function(KBAforms, reviewStage){
         substr(., start=5, stop=nchar(.)) %>%
         paste(., collapse="; ")
       
-      if(formVersion %in% c(1, 1.1)){
-        additionalInfo[8, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
-      }else{
-        additionalInfo[9, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
-      }
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
       
             # Make it a flextable
       additionalInfo_ft <- additionalInfo %>%
