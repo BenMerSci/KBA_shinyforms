@@ -283,10 +283,12 @@ form_conversion <- function(KBAforms, reviewStage){
       if(formVersion %in% c(1, 1.1)){
         percentProtected <- site$GENERAL[which(site$Field == "Percent protected")]
         siteHistory <- NA
+        conservation <- site$GENERAL[which(site$Field == "Site management")]
       }else{
         percentProtected <- "Unspecified"
         customaryJurisdictionSource <- site$GENERAL[which(site$Field == "Customary jurisdiction source")]
         siteHistory <- site$GENERAL[which(site$Field == "Site history")]
+        conservation <- site$GENERAL[which(site$Field == "Conservation")]
       }
       
       # Prepare flextables
@@ -920,8 +922,11 @@ form_conversion <- function(KBAforms, reviewStage){
       
             # Customary jurisdiction source
       if(!formVersion %in% c(1, 1.1)){
-        additionalInfo[nrow(additionalInfo)+1, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "_", customaryJurisdictionSource))
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
       }
+      
+            # Conservation
+      additionalInfo[nrow(additionalInfo)+1, ] <- c("Conservation", ifelse(is.na(conservation), "-", conservation))
       
             # Ongoing conservation actions
       ongoingActions <- actions %>%
