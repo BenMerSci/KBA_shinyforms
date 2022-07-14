@@ -281,11 +281,9 @@ form_conversion <- function(KBAforms, reviewStage){
       customaryJurisdiction <- site$GENERAL[which(site$Field == "Customary jurisdiction")]
       
       if(formVersion %in% c(1, 1.1)){
-        percentProtected <- site$GENERAL[which(site$Field == "Percent protected")]
         siteHistory <- NA
         conservation <- site$GENERAL[which(site$Field == "Site management")]
       }else{
-        percentProtected <- "Unspecified"
         customaryJurisdictionSource <- site$GENERAL[which(site$Field == "Customary jurisdiction source")]
         siteHistory <- site$GENERAL[which(site$Field == "Site history")]
         conservation <- site$GENERAL[which(site$Field == "Conservation")]
@@ -919,9 +917,6 @@ form_conversion <- function(KBAforms, reviewStage){
       
             # Additional biodiversity
       additionalInfo[nrow(additionalInfo)+1, ] <- c("Additional biodiversity at the site", ifelse(is.na(additionalBiodiversity), "-", additionalBiodiversity))
-      
-            # Percent protected
-      additionalInfo[nrow(additionalInfo)+1, ] <- c("Percent of site covered by protected areas", percentProtected)
       
             # Customary jurisdiction at site
       additionalInfo[nrow(additionalInfo)+1, ] <- c("Customary jurisdiction at site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
