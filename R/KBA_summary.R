@@ -911,6 +911,11 @@ form_conversion <- function(KBAforms, reviewStage){
             # Customary jurisdiction at site
       additionalInfo[5, ] <- c("Customary jurisdiction at site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
       
+            # Customary jurisdiction source
+      if(!formVersion %in% c(1, 1.1)){
+        additionalInfo[6, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "_", customaryJurisdictionSource))
+      }
+      
             # Ongoing conservation actions
       ongoingActions <- actions %>%
         filter(Ongoing == "TRUE") %>%
@@ -918,7 +923,11 @@ form_conversion <- function(KBAforms, reviewStage){
         substr(., start=5, stop=nchar(.)) %>%
         paste(., collapse="; ")
       
-      additionalInfo[6, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
+      if(formVersion %in% c(1, 1.1)){
+        additionalInfo[6, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
+      }else{
+        additionalInfo[7, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
+      }
       
             # Ongoing threats
       if(!noThreats){
@@ -933,7 +942,11 @@ form_conversion <- function(KBAforms, reviewStage){
         threatText <- "-"
       }
       
-      additionalInfo[7, ] <- c("Ongoing threats", threatText)
+      if(formVersion %in% c(1, 1.1)){
+        additionalInfo[7, ] <- c("Ongoing threats", threatText)
+      }else{
+        additionalInfo[8, ] <- c("Ongoing threats", threatText)
+      }
       
             # Conservation actions needed
       neededActions <- actions %>%
@@ -942,7 +955,11 @@ form_conversion <- function(KBAforms, reviewStage){
         substr(., start=5, stop=nchar(.)) %>%
         paste(., collapse="; ")
       
-      additionalInfo[8, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
+      if(formVersion %in% c(1, 1.1)){
+        additionalInfo[8, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
+      }else{
+        additionalInfo[9, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
+      }
       
             # Make it a flextable
       additionalInfo_ft <- additionalInfo %>%
