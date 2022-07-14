@@ -120,6 +120,7 @@ form_conversion <- function(KBAforms, reviewStage){
         .[2:nrow(.),]
       
             # 3. SPECIES
+                  # General
       colnames(species) <- species[1,]
       species %<>%
         .[2:nrow(.),] %>%
@@ -131,15 +132,72 @@ form_conversion <- function(KBAforms, reviewStage){
         colnames(species)[which(colnames(species) == "RU Source")] <- "RU source"
       }
       
+                  # Redact sensitive information
+      if((!formVersion %in% c(1, 1.1)) & (!reviewStage == "technical")){
+        
+                        # Check that the Public Display section is filled out
+        if(sum(is.na(species$`Display taxonomic group?`), is.na(species$`Display taxon name?`), is.na(species$`Display assessment information?`), is.na(species$`Display internal boundary?`)) > 0){
+          convert_res[step,"Result"] <- emo::ji("prohibited")
+          convert_res[step,"Error"] <- paste0("You are requesting a summary for ", ifelse(reviewStage == "general", "General Review", "Steering Committee submission"), " and the Public Display section of the KBA Canada Proposal Form is not filled out. Please fill out this section before you proceed with ", ifelse(reviewStage == "general", "General Review.", "Steering Committee submission."))
+          KBAforms[step] <- NA
+          next
+          
+        }else{
+          
+          for(i in 1:nrow(species)){
+            
+            alternativeName <- species$`Alternative name to display`[i]
+            alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "Sensitive taxon", alternativeName)
+            
+                        # Display taxonomic group?
+            if(species$`Display taxonomic group?`[i] == "No"){
+              species$`Taxonomic group`[i] <- "-"
+              species$`Common name`[i] <- alternativeName
+              species$`Scientific name`[i] <- alternativeName
+            }
+            
+                        # Display taxon name?
+            if(species$`Display taxon name?`[i] == "No"){
+              species$`Common name`[i] <- alternativeName
+              species$`Scientific name`[i] <- alternativeName
+            }
+            
+                        # Display assessment information?
+            if(species$`Display assessment information?`[i] == "No"){
+              species$Status[i] <- "-"
+              species$`Status assessment agency`[i] <- "-"
+              species$`Reproductive Units (RU)`[i] <- "-"
+              species$`Assessment parameter`[i] <- "(i) -"
+              species$`Min site estimate`[i] <- "-"
+              species$`Best site estimate`[i] <- "-"
+              species$`Max site estimate`[i] <- "-"
+              species$`Year of site estimate`[i] <- "-"
+              species$`Min reference estimate`[i] <- "-"
+              species$`Best reference estimate`[i] <- "-"
+              species$`Max reference estimate`[i] <- "-"
+              species$`Composition of 10 RUs`[i] <- "-"
+              species$`RU source`[i] <- "-"
+              species$`Derivation of best estimate`[i] <- "-"
+              species$`Explanation of site estimates`[i] <- "-"
+              species$`Sources of site estimates`[i] <- "-"
+              species$`Explanation of reference estimates`[i] <- "-"
+              species$`Sources of reference estimates`[i] <- "-"
+            }
+          }
+        }
+      }
             # 4. ECOSYSTEMS & C
       ecosystems %<>%
         pull(X2) %>%
         unique() %>%
         .[which(!. == "Criteria met")]
-      if(!length(ecosystems) == 0){convert_res[step,"Result"] <- emo::ji("prohibited")
-                                  convert_res[step,"Error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with this error message."
-                                  KBAforms[step] <- NA
-                                  next}
+      
+      if(!length(ecosystems) == 0){
+        convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with this error message."
+        KBAforms[step] <- NA
+        next
+      }
             
             # 5. THREATS
                   # Verify whether "No Threats" checkbox is checked
@@ -193,11 +251,18 @@ form_conversion <- function(KBAforms, reviewStage){
       }
        
             # 7. CITATIONS
+                  # General
       colnames(citations) <- tolower(citations[2,])
       citations %<>%
         .[3:nrow(.), 1:4] %>%
         filter(!is.na(`short citation`))
       
+                  # Redact sensitive citations
+      if(!reviewStage == "technical"){
+        citations %<>% mutate(Sensitive = ifelse(grepl("SENSITIVE", citations$`short citation`, T), T, F)) %>%
+          filter(!Sensitive)
+      }
+        
             # 8. CHECK
                   # Column names
       colnames(check) <- c("Check", "Item")
@@ -353,10 +418,10 @@ form_conversion <- function(KBAforms, reviewStage){
       speciesAssessments <- species %>%
         filter(!is.na(`Criteria met`)) %>%
         mutate_at(vars(`Reproductive Units (RU)`, `Min site estimate`, `Best site estimate`, `Max site estimate`, `Min reference estimate`, `Best reference estimate`, `Max reference estimate`), as.double) %>%
-        mutate(PercentAtSite = round(100 * `Best site estimate`/`Best reference estimate`, 1)) %>%
+        mutate(PercentAtSite = ifelse(`Best site estimate` == "-", "-", round(100 * `Best site estimate`/`Best reference estimate`, 1))) %>%
         mutate(Blank = "") %>%
         mutate(Status = ifelse(grepl("A1", `Criteria met`, fixed=T),
-                               paste0(Status, " (", `Status assessment agency`, ")"),
+                               ifelse(`Status assessment agency` == "-", "-", paste0(Status, " (", `Status assessment agency`, ")")),
                                "Not applicable")) %>%
         mutate(SiteEstimate_Min = as.character(`Min site estimate`),
                SiteEstimate_Best = as.character(`Best site estimate`),
