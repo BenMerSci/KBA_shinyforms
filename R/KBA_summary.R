@@ -126,7 +126,8 @@ form_conversion <- function(KBAforms, reviewStage){
         .[2:nrow(.),] %>%
         filter(!is.na(`Common name`)) %>%
         mutate(`Common name` = trimws(`Common name`),
-               `Scientific name` = trimws(`Scientific name`))
+               `Scientific name` = trimws(`Scientific name`),
+               Sensitive = F)
       
       if(formVersion %in% c(1, 1.1)){
         colnames(species)[which(colnames(species) == "RU Source")] <- "RU source"
@@ -146,7 +147,8 @@ form_conversion <- function(KBAforms, reviewStage){
           
           for(i in 1:nrow(species)){
             
-            alternativeName <- species$`Alternative name to display`[i]
+            alternativeName <- species$`Alternative name to display`[i] %>%
+              str_to_sentence()
             alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "Sensitive taxon", alternativeName)
             
                         # Display taxonomic group?
@@ -154,12 +156,14 @@ form_conversion <- function(KBAforms, reviewStage){
               species$`Taxonomic group`[i] <- "-"
               species$`Common name`[i] <- alternativeName
               species$`Scientific name`[i] <- alternativeName
+              species$Sensitive[i] <- T
             }
             
                         # Display taxon name?
             if(species$`Display taxon name?`[i] == "No"){
               species$`Common name`[i] <- alternativeName
               species$`Scientific name`[i] <- alternativeName
+              species$Sensitive[i] <- T
             }
             
                         # Display assessment information?
@@ -182,10 +186,15 @@ form_conversion <- function(KBAforms, reviewStage){
               species$`Sources of site estimates`[i] <- "-"
               species$`Explanation of reference estimates`[i] <- "-"
               species$`Sources of reference estimates`[i] <- "-"
+              species$Sensitive[i] <- T
             }
           }
         }
       }
+      
+                  # Sort by scientific name
+      species %<>% arrange(`Scientific name`)
+      
             # 4. ECOSYSTEMS & C
       ecosystems %<>%
         pull(X2) %>%
@@ -431,7 +440,7 @@ form_conversion <- function(KBAforms, reviewStage){
                TotalEstimate_Max = as.character(`Max reference estimate`)) %>%
         mutate(AssessmentParameter = sapply(`Assessment parameter`, function(x) str_to_sentence(substr(x, start=str_locate(x, "\\)")[1,1]+2, stop=nchar(x))))) %>%
         mutate(AssessmentParameter = ifelse(AssessmentParameter %in% c("Area of occupancy", "Extent of suitable habitat", "Range"), paste(AssessmentParameter, "(km2)"), AssessmentParameter)) %>%
-        select(`Scientific name`, Status, `Criteria met`, `Reproductive Units (RU)`, `Composition of 10 RUs`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite)
+        select(`Scientific name`, Status, `Criteria met`, `Reproductive Units (RU)`, `Composition of 10 RUs`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite, Sensitive)
       
                   # Separate global and national assessments
       speciesAssessments_g <- speciesAssessments %>%
@@ -452,7 +461,7 @@ form_conversion <- function(KBAforms, reviewStage){
       
                   # Information for the footnotes
       footnotes_g <- speciesAssessments_g %>%
-        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`) %>%
+        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`, Sensitive) %>%
         mutate(`Composition of 10 RUs` = sapply(`Composition of 10 RUs`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`RU source` = sapply(`RU source`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Derivation of best estimate` = sapply(`Derivation of best estimate`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>% 
@@ -463,10 +472,10 @@ form_conversion <- function(KBAforms, reviewStage){
         mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
         mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
         mutate(Reference_Source = paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`, " Source(s) of global estimate(s): ", `Sources of reference estimates`)) %>%
-        select(RU_Source, Site_Source, Reference_Source)
+        select(RU_Source, Site_Source, Reference_Source, Sensitive)
       
       footnotes_n <- speciesAssessments_n %>%
-        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`) %>%
+        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`, Sensitive) %>%
         mutate(`Composition of 10 RUs` = sapply(`Composition of 10 RUs`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`RU source` = sapply(`RU source`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Derivation of best estimate` = sapply(`Derivation of best estimate`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>% 
@@ -477,7 +486,7 @@ form_conversion <- function(KBAforms, reviewStage){
         mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
         mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
         mutate(Reference_Source = paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`, " Source(s) of national estimate(s): ", `Sources of reference estimates`)) %>%
-        select(RU_Source, Site_Source, Reference_Source)
+        select(RU_Source, Site_Source, Reference_Source, Sensitive)
       
                   # Information for the main table
       speciesAssessments_g %<>% select(-c(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`))
@@ -520,6 +529,7 @@ form_conversion <- function(KBAforms, reviewStage){
       if(nrow(speciesAssessments_g) > 0){
         if(bestOnly_g){
           speciesAssessments_g_ft <- speciesAssessments_g %>%
+            select(-Sensitive) %>%
             flextable() %>%
             width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
             set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'Global Estimate', PercentAtSite = "% of Global Pop. at Site")) %>%
@@ -542,6 +552,7 @@ form_conversion <- function(KBAforms, reviewStage){
           
         }else{
           speciesAssessments_g_ft <- speciesAssessments_g %>%
+            select(-Sensitive) %>%
             mutate(Blank2 = "") %>%
             relocate(Blank2, .after = `Year of site estimate`) %>%
             flextable() %>%
@@ -572,6 +583,7 @@ form_conversion <- function(KBAforms, reviewStage){
       if(nrow(speciesAssessments_n) > 0){
         if(bestOnly_n){
           speciesAssessments_n_ft <- speciesAssessments_n %>%
+            select(-Sensitive) %>%
             flextable() %>%
             width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
             set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'National Estimate', PercentAtSite = "% of National Pop. at Site")) %>%
@@ -594,6 +606,7 @@ form_conversion <- function(KBAforms, reviewStage){
           
         }else{
           speciesAssessments_n_ft <- speciesAssessments_n %>%
+            select(-Sensitive) %>%
             mutate(Blank2 = "") %>%
             relocate(Blank2, .after = `Year of site estimate`) %>%
             flextable() %>%
@@ -627,100 +640,106 @@ form_conversion <- function(KBAforms, reviewStage){
         for(i in 1:nrow(speciesAssessments_g)){
           col <- which(grepl("http", footnotes_n[i,]), arr.ind = TRUE)
           
-          for(c in 1:ncol(footnotes_g)){
-            string <- footnotes_g[i,c]
+          if(!speciesAssessments_g$Sensitive[i]){
             
-            if(!is.na(string)){
-              footnote <- footnote+1
+            for(c in 1:ncol(footnotes_g %>% select(-Sensitive))){
+              string <- footnotes_g[i,c]
               
-              # If there's a link in the footnote
-              if(c %in% col){
-                urls <- str_locate_all(string, "http")[[1]][,1]
-                urlIDs <- paste0("url", urls)
-                spaces <- str_locate_all(string, " ")[[1]][,1] %>%
-                  ifelse(length(.) == 0, -1, .)
-                links <- list()
+              if(!is.na(string)){
+                footnote <- footnote+1
                 
-                for(u in 1:length(urls)){
-                  url <- urls[u]
+                # If there's a link in the footnote
+                if(c %in% col){
+                  urls <- str_locate_all(string, "http")[[1]][,1]
+                  urlIDs <- paste0("url", urls)
+                  spaces <- str_locate_all(string, " ")[[1]][,1] %>%
+                    ifelse(length(.) == 0, -1, .)
+                  links <- list()
                   
-                  if(spaces[length(spaces)] > url){
-                    space <- spaces[which(spaces > url)][1]
-                    link <- substr(string, start=url, stop=space-1)
+                  for(u in 1:length(urls)){
+                    url <- urls[u]
                     
-                  }else{
-                    link <- substr(string, start=url, stop=nchar(string))
-                  }
-                  
-                  # Remove full-stops and parentheses at the end
-                        # First round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                  
-                        # Second round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                  
-                  links[[urlIDs[u]]] <- link
-                }
-                
-                # Create call
-                call_substr <- rep("substr", each=length(urls)+1)
-                call_hyperlink <- rep("hyperlink", each=length(urls))
-                call_all <- c(sapply(seq_along(call_substr), function(i) append(call_substr[i], call_hyperlink[i], i)))
-                call_all <- call_all[which(!is.na(call_all))]
-                start <- 1
-                
-                for(call in 1:length(call_all)){
-                  if(call_all[call] == "substr"){
-                    
-                    if(call == 1){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", call, "]-1)")
-                    }else if(!call == length(call_all)){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", (call+1)/2, "]-1)")
+                    if(spaces[length(spaces)] > url){
+                      space <- spaces[which(spaces > url)][1]
+                      link <- substr(string, start=url, stop=space-1)
+                      
                     }else{
-                      text <- paste0("substr(string, start=", start, ", stop=nchar(string))")
+                      link <- substr(string, start=url, stop=nchar(string))
                     }
                     
-                  }else{
-                    text <- paste0("hyperlink_text(x='link', url=links[", call/2, "], props = fp_text(color='blue', font.size=11, underlined=T, font.family = 'Calibri'))")
-                    start <- urls[call/2] + nchar(links[call/2])
+                    # Remove full-stops and parentheses at the end
+                          # First round
+                    if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                      
+                    }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                    }
+                    
+                          # Second round
+                    if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                      
+                    }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                    }
+                    
+                    links[[urlIDs[u]]] <- link
                   }
                   
-                  if(call == 1){
-                    call_final <- text
-                  }else{
-                    call_final <- paste(call_final, text, sep=', ')
+                  # Create call
+                  call_substr <- rep("substr", each=length(urls)+1)
+                  call_hyperlink <- rep("hyperlink", each=length(urls))
+                  call_all <- c(sapply(seq_along(call_substr), function(i) append(call_substr[i], call_hyperlink[i], i)))
+                  call_all <- call_all[which(!is.na(call_all))]
+                  start <- 1
+                  
+                  for(call in 1:length(call_all)){
+                    if(call_all[call] == "substr"){
+                      
+                      if(call == 1){
+                        text <- paste0("substr(string, start=", start, ", stop=urls[", call, "]-1)")
+                      }else if(!call == length(call_all)){
+                        text <- paste0("substr(string, start=", start, ", stop=urls[", (call+1)/2, "]-1)")
+                      }else{
+                        text <- paste0("substr(string, start=", start, ", stop=nchar(string))")
+                      }
+                      
+                    }else{
+                      text <- paste0("hyperlink_text(x='link', url=links[", call/2, "], props = fp_text(color='blue', font.size=11, underlined=T, font.family = 'Calibri'))")
+                      start <- urls[call/2] + nchar(links[call/2])
+                    }
+                    
+                    if(call == 1){
+                      call_final <- text
+                    }else{
+                      call_final <- paste(call_final, text, sep=', ')
+                    }
                   }
-                }
-                
-                if(bestOnly){
-                  call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
+                  
+                  if(bestOnly){
+                    call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
+                  }else{
+                    call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
+                  }
+                  
+                  # Evaluate call
+                  eval(parse(text=call_final))
+                  
+                  # If there is no link in the footnote
                 }else{
-                  call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
-                }
-                
-                # Evaluate call
-                eval(parse(text=call_final))
-                
-                # If there is no link in the footnote
-              }else{
-                
-                if(bestOnly_g){
-                  speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
-                }else{
-                  speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                  
+                  if(bestOnly_g){
+                    speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                  }else{
+                    speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                  }
                 }
               }
             }
+          }else{
+            footnote <- footnote+1
+            speciesAssessments_g_ft %<>% footnote(i=i, j=1, value=as_paragraph(as.character("For more information, please contact the KBA Canada Secretariat.")), ref_symbols=as.integer(footnote))
           }
         }
       }
@@ -731,100 +750,106 @@ form_conversion <- function(KBAforms, reviewStage){
         for(i in 1:nrow(speciesAssessments_n)){
           col <- which(grepl("http", footnotes_n[i,]), arr.ind = TRUE)
           
-          for(c in 1:ncol(footnotes_n)){
-            string <- footnotes_n[i,c]
+          if(!speciesAssessments_n$Sensitive[i]){
             
-            if(!is.na(string)){
-              footnote <- footnote+1
+            for(c in 1:ncol(footnotes_n %>% select(-Sensitive))){
+              string <- footnotes_n[i,c]
               
-              # If there's a link in the footnote
-              if(c %in% col){
-                urls <- str_locate_all(string, "http")[[1]][,1]
-                urlIDs <- paste0("url", urls)
-                spaces <- str_locate_all(string, " ")[[1]][,1] %>%
-                  ifelse(length(.) == 0, -1, .)
-                links <- list()
+              if(!is.na(string)){
+                footnote <- footnote+1
                 
-                for(u in 1:length(urls)){
-                  url <- urls[u]
+                # If there's a link in the footnote
+                if(c %in% col){
+                  urls <- str_locate_all(string, "http")[[1]][,1]
+                  urlIDs <- paste0("url", urls)
+                  spaces <- str_locate_all(string, " ")[[1]][,1] %>%
+                    ifelse(length(.) == 0, -1, .)
+                  links <- list()
                   
-                  if(spaces[length(spaces)] > url){
-                    space <- spaces[which(spaces > url)][1]
-                    link <- substr(string, start=url, stop=space-1)
+                  for(u in 1:length(urls)){
+                    url <- urls[u]
                     
-                  }else{
-                    link <- substr(string, start=url, stop=nchar(string))
-                  }
-                  
-                  # Remove full-stops and parentheses at the end
-                  # First round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                  
-                  # Second round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                  
-                  links[[urlIDs[u]]] <- link
-                }
-                
-                # Create call
-                call_substr <- rep("substr", each=length(urls)+1)
-                call_hyperlink <- rep("hyperlink", each=length(urls))
-                call_all <- c(sapply(seq_along(call_substr), function(i) append(call_substr[i], call_hyperlink[i], i)))
-                call_all <- call_all[which(!is.na(call_all))]
-                start <- 1
-                
-                for(call in 1:length(call_all)){
-                  if(call_all[call] == "substr"){
-                    
-                    if(call == 1){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", call, "]-1)")
-                    }else if(!call == length(call_all)){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", (call+1)/2, "]-1)")
+                    if(spaces[length(spaces)] > url){
+                      space <- spaces[which(spaces > url)][1]
+                      link <- substr(string, start=url, stop=space-1)
+                      
                     }else{
-                      text <- paste0("substr(string, start=", start, ", stop=nchar(string))")
+                      link <- substr(string, start=url, stop=nchar(string))
                     }
                     
-                  }else{
-                    text <- paste0("hyperlink_text(x='link', url=links[", call/2, "], props = fp_text(color='blue', font.size=11, underlined=T, font.family = 'Calibri'))")
-                    start <- urls[call/2] + nchar(links[call/2])
+                    # Remove full-stops and parentheses at the end
+                    # First round
+                    if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                      
+                    }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                    }
+                    
+                    # Second round
+                    if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                      
+                    }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
+                      link <- substr(link, start=1, stop=nchar(link)-1)
+                    }
+                    
+                    links[[urlIDs[u]]] <- link
                   }
                   
-                  if(call == 1){
-                    call_final <- text
-                  }else{
-                    call_final <- paste(call_final, text, sep=', ')
+                  # Create call
+                  call_substr <- rep("substr", each=length(urls)+1)
+                  call_hyperlink <- rep("hyperlink", each=length(urls))
+                  call_all <- c(sapply(seq_along(call_substr), function(i) append(call_substr[i], call_hyperlink[i], i)))
+                  call_all <- call_all[which(!is.na(call_all))]
+                  start <- 1
+                  
+                  for(call in 1:length(call_all)){
+                    if(call_all[call] == "substr"){
+                      
+                      if(call == 1){
+                        text <- paste0("substr(string, start=", start, ", stop=urls[", call, "]-1)")
+                      }else if(!call == length(call_all)){
+                        text <- paste0("substr(string, start=", start, ", stop=urls[", (call+1)/2, "]-1)")
+                      }else{
+                        text <- paste0("substr(string, start=", start, ", stop=nchar(string))")
+                      }
+                      
+                    }else{
+                      text <- paste0("hyperlink_text(x='link', url=links[", call/2, "], props = fp_text(color='blue', font.size=11, underlined=T, font.family = 'Calibri'))")
+                      start <- urls[call/2] + nchar(links[call/2])
+                    }
+                    
+                    if(call == 1){
+                      call_final <- text
+                    }else{
+                      call_final <- paste(call_final, text, sep=', ')
+                    }
                   }
-                }
-                
-                if(bestOnly){
-                  call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
+                  
+                  if(bestOnly){
+                    call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
+                  }else{
+                    call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
+                  }
+                  
+                  # Evaluate call
+                  eval(parse(text=call_final))
+                  
+                  # If there is no link in the footnote
                 }else{
-                  call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
-                }
-                
-                # Evaluate call
-                eval(parse(text=call_final))
-                
-                # If there is no link in the footnote
-              }else{
-                
-                if(bestOnly_n){
-                  speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
-                }else{
-                  speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                  
+                  if(bestOnly_n){
+                    speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                  }else{
+                    speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                  }
                 }
               }
             }
+          }else{
+            footnote <- footnote+1
+            speciesAssessments_n_ft %<>% footnote(i=i, j=1, value=as_paragraph(as.character("For more information, please contact the KBA Canada Secretariat.")), ref_symbols=as.integer(footnote))
           }
         }
       }
