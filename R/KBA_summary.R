@@ -1100,7 +1100,7 @@ form_conversion <- function(KBAforms, reviewStage){
         }
     
        # Compute document name   
-       doc <- paste0("Summary_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)"), repl=""), "_", Sys.Date(), ".docx")
+       doc <- paste0("Summary_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
       
       # Save
       doc <- renderInlineCode(template, doc)
