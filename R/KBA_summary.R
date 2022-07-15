@@ -915,12 +915,23 @@ form_conversion <- function(KBAforms, reviewStage){
         spp <- spp[lapply(spp, "%%", 2) == 0]
         
         for(i in spp){
-          extraCall <- paste0(extraCall, ", as_chunk(x=', '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')")
+          if(elementsSummary[i] == elementsSummary[i+1]){
+            extraCall <- paste0(extraCall, ", as_chunk(x=', '), as_chunk(x=X", i-1, ")")
+          }else{
+            extraCall <- paste0(extraCall, ", as_chunk(x=', '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')")
+          }
         }
       }
-      compose_call <- paste0("elementsSummary_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(Prefix), as_chunk(x=X1), as_chunk(x=' ('), as_chunk(x=X2, props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')", 
-                             extraCall,
-                             "))")
+      
+      if(elementsSummary[2] == elementsSummary[3]){
+        compose_call <- paste0("elementsSummary_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(Prefix), as_chunk(x=X1)", 
+                               extraCall,
+                               "))")
+      }else{
+        compose_call <- paste0("elementsSummary_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(Prefix), as_chunk(x=X1), as_chunk(x=' ('), as_chunk(x=X2, props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')", 
+                               extraCall,
+                               "))")
+      }
       eval(parse(text=compose_call))
       
       elementsSummary_ft %<>%
@@ -935,19 +946,30 @@ form_conversion <- function(KBAforms, reviewStage){
         width(j=colnames(.), width=c(9))
       
       extraCall <- ""
-      if(ncol(elementsSummary) > 3){
+      if(ncol(elementsSummary) > 2){
         
-        # Keep only columns with common names
+        # Keep only columns with scientific names
         spp <- 4:ncol(elementsSummary)
         spp <- spp[lapply(spp, "%%", 2) == 0]
         
         for(i in spp){
-          extraCall <- paste0(extraCall, ", as_chunk(x=', ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+          if(elementsSummary[i-1] == elementsSummary[i]){
+            extraCall <- paste0(extraCall, ", as_chunk(x=', ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+          }else{
+            extraCall <- paste0(extraCall, ", as_chunk(x=', ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+          }
         }
       }
-      compose_call <- paste0("subtitle_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(x=X1, props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X2, props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))", 
-                             extraCall,
-                             "))")
+      
+      if(elementsSummary[1] == elementsSummary[2]){
+        compose_call <- paste0("subtitle_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(x=X1, props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))", 
+                               extraCall,
+                               "))")
+      }else{
+        compose_call <- paste0("subtitle_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(x=X1, props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X2, props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))", 
+                               extraCall,
+                               "))")
+      }
       eval(parse(text=compose_call))
       
       subtitle_ft %<>%
