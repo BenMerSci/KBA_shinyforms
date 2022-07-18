@@ -156,11 +156,11 @@ shinyjs::hide("downloadData")
 
     output$downloadData <- downloadHandler(
       filename = function() if(length(file_df()$name) == 1){
-        paste0(r$convertRes[[2]]$Name,".docx")
-      } else{"Summaries.zip"},
+        r$convertRes[[1]]
+      }else{"Summaries.zip"},
       content = function(file) if(length(file_df()$name) == 1){
-        file.rename( from = r$convertRes[[1]], to = file )
-      } else{
+        file.rename(from = r$convertRes[[1]], to = file)
+      }else{
           # create a temp folder for shp files
           temp_fold <- tempdir()
           zip_file <- paste0(temp_fold,"/Summaries.zip")
@@ -170,7 +170,6 @@ shinyjs::hide("downloadData")
           # remove all the files created
           file.remove(zip_file)
         }
-
     )
 
     rm(delineationRationale, includeGlobalTriggers, includeNationalTriggers,
