@@ -1003,17 +1003,33 @@ form_conversion <- function(KBAforms, reviewStage){
         fontsize(size=12, part='body')
       
       # Technical Review
-      technicalReview_ft <- technicalReview %>%
-        flextable() %>%
-        width(j=colnames(.), width=c(1.4,2,2,3.6)) %>%
-        align(align = "center", part="header") %>%
-        font(fontname="Calibri", part="header") %>%
-        fontsize(size=11, part='header') %>%
-        bold(i=1, bold=T, part='header') %>%
-        merge_v(part = "header") %>%
-        font(fontname="Calibri", part="body") %>%
-        fontsize(size=11, part='body') %>%
-        hline_top(part="all")
+      if(reviewStage == "general"){
+        technicalReview_ft <- technicalReview %>%
+          select(-`Description of role`) %>%
+          flextable() %>%
+          width(j=colnames(.), width=c(2.4,3.6,3)) %>%
+          align(align = "center", part="header") %>%
+          font(fontname="Calibri", part="header") %>%
+          fontsize(size=11, part='header') %>%
+          bold(i=1, bold=T, part='header') %>%
+          merge_v(part = "header") %>%
+          font(fontname="Calibri", part="body") %>%
+          fontsize(size=11, part='body') %>%
+          hline_top(part="all")
+        
+      }else{
+        technicalReview_ft <- technicalReview %>%
+          flextable() %>%
+          width(j=colnames(.), width=c(1.4,2,2,3.6)) %>%
+          align(align = "center", part="header") %>%
+          font(fontname="Calibri", part="header") %>%
+          fontsize(size=11, part='header') %>%
+          bold(i=1, bold=T, part='header') %>%
+          merge_v(part = "header") %>%
+          font(fontname="Calibri", part="body") %>%
+          fontsize(size=11, part='body') %>%
+          hline_top(part="all")
+      }
       
       # General Review
       generalReview_ft <- generalReview %>%
