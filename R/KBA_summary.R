@@ -1059,13 +1059,15 @@ form_conversion <- function(KBAforms, reviewStage){
       }
       
             # Assessed elements that did not meet KBA criteria
-      speciesNotTriggers <- species %>%
-        filter(is.na(`Criteria met`)) %>%
-        pull(`Scientific name`) %>%
-        unique() %>%
-        paste(., collapse=", ")
-    
-      additionalInfo[nrow(additionalInfo)+1, ] <- c("Biodiversity elements that were assessed but did not meet KBA criteria", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
+      if(!reviewStage == "general"){
+        speciesNotTriggers <- species %>%
+          filter(is.na(`Criteria met`)) %>%
+          pull(`Scientific name`) %>%
+          unique() %>%
+          paste(., collapse=", ")
+      
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Biodiversity elements that were assessed but did not meet KBA criteria", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
+      }
       
             # Additional biodiversity
       additionalInfo[nrow(additionalInfo)+1, ] <- c("Additional biodiversity at the site", ifelse(is.na(additionalBiodiversity), "-", additionalBiodiversity))
@@ -1119,8 +1121,13 @@ form_conversion <- function(KBAforms, reviewStage){
         flextable() %>%
         width(j=colnames(.), width=c(3,6)) %>%
         font(fontname="Calibri", part="body") %>%
-        fontsize(size=11, part='body') %>%
-        italic(i=2, j=2, part='body') %>%
+        fontsize(size=11, part='body')
+      
+      if(!reviewStage == "general"){
+        additionalInfo_ft %<>% italic(i=2, j=2, part='body')
+      }
+      
+      additionalInfo_ft %<>%
         delete_part(part="header") %>%
         theme_zebra() %>%
         align(j=c(1,2), align='left', part='body') %>%
