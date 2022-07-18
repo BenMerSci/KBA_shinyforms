@@ -1215,8 +1215,14 @@ form_conversion <- function(KBAforms, reviewStage){
       if(sucess){
         convert_res[step,"Result"] <- emo::ji("check")
         
-        if(((sum(species$`Display taxon name?` == "No") > 0) | (sum(species$`Display taxonomic group?` == "No") > 0) | (sum(species$`Display assessment information?` == "No") > 0)) & (!reviewStage == "general")){
-          convert_res[step, "Message"] <- "WARNING: Contains unredacted sensitive information"
+        if(!formVersion %in% c(1, 1.1)){
+          
+          for(i in 1:nrow(species)){
+            
+            if(((!is.na(species$`Display taxon name?`[i]) && (species$`Display taxon name?`[i] == "No")) | (!is.na(species$`Display taxonomic group?`[i]) && (species$`Display taxonomic group?`[i] == "No")) | (!is.na(species$`Display assessment information?`[i]) && (species$`Display assessment information?`[i] == "No"))) & (!reviewStage == "general")){
+              convert_res[step, "Message"] <- "WARNING: Contains unredacted sensitive information"
+            }
+          }
         }
       }
     }
