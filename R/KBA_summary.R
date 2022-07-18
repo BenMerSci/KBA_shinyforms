@@ -11,14 +11,14 @@ form_conversion <- function(KBAforms, reviewStage){
 
     # Create a dataframe to store the success/failure state of each conversion
     convert_res <- data.frame(matrix(ncol=3))
-    colnames(convert_res) <- c("Name","Result","Error")
+    colnames(convert_res) <- c("Name","Result","Message")
     
     #### Prepare the Summary(ies) ####
     for(step in 1:length(KBAforms)){
     
       if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)){
         convert_res[step,"Result"] <- emo::ji("prohibited")
-        convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA proposal form")
+        convert_res[step, "Message"] <- paste(KBAforms[step], "is not a KBA proposal form")
         KBAforms[step] <- NA
         next
       }
@@ -33,7 +33,7 @@ form_conversion <- function(KBAforms, reviewStage){
       
       if(sum(c("HOME", "1. PROPOSER", "2. SITE", "3. SPECIES","4. ECOSYSTEMS & C", "5. THREATS", "6. REVIEW", "7. CITATIONS", "8. CHECK") %in% getSheetNames(KBAforms[step])) != 9) {
         convert_res[step, "Result"] <- emo::ji("prohibited")
-        convert_res[step, "Error"] <- paste(KBAforms[step], "is not a KBA Canada proposal form. If you need a summary for a Legacy single-site form, contact Chloé.")
+        convert_res[step, "Message"] <- paste(KBAforms[step], "is not a KBA Canada proposal form. If you need a summary for a Legacy single-site form, contact Chloé.")
         KBAforms[step] <- NA
         next
       }
@@ -60,7 +60,7 @@ form_conversion <- function(KBAforms, reviewStage){
             # Check that the name exists
       if(is.na(name)){
         convert_res[step,"Result"] <- emo::ji("prohibited")
-        convert_res[step,"Error"] <- "KBA site must have a name."
+        convert_res[step,"Message"] <- "KBA site must have a name."
         KBAforms[step] <- NA
         next
       }
@@ -71,7 +71,7 @@ form_conversion <- function(KBAforms, reviewStage){
             # Check that the name is not too long
       if(nchar(name)>255){
         convert_res[step,"Result"] <- emo::ji("prohibited")
-        convert_res[step,"Error"] <- "KBA name is too long."
+        convert_res[step,"Message"] <- "KBA name is too long."
         KBAforms[step] <- NA
         next
       }
@@ -79,7 +79,7 @@ form_conversion <- function(KBAforms, reviewStage){
             # Check that the name does not contain any paragraph symbols
       if(grepl("\n", name, fixed=T)){
         convert_res[step,"Result"] <- emo::ji("prohibited")
-        convert_res[step,"Error"] <- "KBA name should not include paragraph breaks."
+        convert_res[step,"Message"] <- "KBA name should not include paragraph breaks."
         KBAforms[step] <- NA
         next
       }
@@ -91,7 +91,7 @@ form_conversion <- function(KBAforms, reviewStage){
             # Check compatibility
       if(!formVersion %in% c(1, 1.1, 1.2)){
         convert_res[step,"Result"] <- emo::ji("prohibited")
-        convert_res[step,"Error"] <- "Form version not supported. Please contact Chloé and provide her with this error message."
+        convert_res[step,"Message"] <- "Form version not supported. Please contact Chloé and provide her with this error message."
         KBAforms[step] <- NA
         next
       }
@@ -139,7 +139,7 @@ form_conversion <- function(KBAforms, reviewStage){
                         # Check that the Public Display section is filled out
         if(sum(is.na(species$`Display taxonomic group?`), is.na(species$`Display taxon name?`), is.na(species$`Display assessment information?`), is.na(species$`Display internal boundary?`)) > 0){
           convert_res[step,"Result"] <- emo::ji("prohibited")
-          convert_res[step,"Error"] <- "You are requesting a summary for General Review and the Public Display section of the KBA Canada Proposal Form is not filled out. Please fill out this section before you proceed with General Review."
+          convert_res[step,"Message"] <- "You are requesting a summary for General Review and the Public Display section of the KBA Canada Proposal Form is not filled out. Please fill out this section before you proceed with General Review."
           KBAforms[step] <- NA
           next
           
@@ -203,7 +203,7 @@ form_conversion <- function(KBAforms, reviewStage){
       
       if(!length(ecosystems) == 0){
         convert_res[step,"Result"] <- emo::ji("prohibited")
-        convert_res[step,"Error"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with this error message."
+        convert_res[step,"Message"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with this error message."
         KBAforms[step] <- NA
         next
       }
@@ -291,7 +291,7 @@ form_conversion <- function(KBAforms, reviewStage){
                   # Verify that there are as many checkbox results as there are checkboxes
       if(!(nrow(check) == length(check_checkboxes))){
         convert_res[step,"Result"] <- emo::ji("prohibited")
-        convert_res[step,"Error"] <- "Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with this error message."
+        convert_res[step,"Message"] <- "Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with this error message."
         KBAforms[step] <- NA
         next
       }
@@ -371,7 +371,7 @@ form_conversion <- function(KBAforms, reviewStage){
                   # Check that at least one criterion is met
       if(is.na(criteriaMet)){
     	convert_res[step,"Result"] <- emo::ji("prohibited")
-            convert_res[step,"Error"] <- "No KBA Criteria met. Please revise your form and ensure that at least one criterion is met. If you believe that a KBA criterion should be met based on the information you provided in the form, contact Chloé and provide her with the error message."
+            convert_res[step,"Message"] <- "No KBA Criteria met. Please revise your form and ensure that at least one criterion is met. If you believe that a KBA criterion should be met based on the information you provided in the form, contact Chloé and provide her with the error message."
             KBAforms[step] <- NA
             next
     	}
@@ -453,7 +453,7 @@ form_conversion <- function(KBAforms, reviewStage){
       
       if(!(nrow(speciesAssessments_g) + nrow(speciesAssessments_n)) == nrow(speciesAssessments)){
     	convert_res[step,"Result"] <- emo::ji("prohibited")
-            convert_res[step,"Error"] <- "Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message."
+            convert_res[step,"Message"] <- "Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message."
             KBAforms[step] <- NA
             next
     	}
@@ -1212,8 +1212,13 @@ form_conversion <- function(KBAforms, reviewStage){
       sucess <- TRUE
     
       # Compute the successful conversion into the table
-      if(sucess == TRUE) {convert_res[step,"Result"] <- emo::ji("check")}
-      
+      if(sucess){
+        convert_res[step,"Result"] <- emo::ji("check")
+        
+        if(((sum(species$`Display taxon name?` == "No") > 0) | (sum(species$`Display taxonomic group?` == "No") > 0) | (sum(species$`Display assessment information?` == "No") > 0)) & (!reviewStage == "general")){
+          convert_res[step, "Message"] <- "WARNING: Contains unredacted sensitive information"
+        }
+      }
     }
   })
   
@@ -1224,3 +1229,4 @@ form_conversion <- function(KBAforms, reviewStage){
   
   return(list_item)
 }
+
