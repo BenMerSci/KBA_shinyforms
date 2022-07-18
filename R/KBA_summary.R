@@ -1194,12 +1194,12 @@ form_conversion <- function(KBAforms, reviewStage){
         }
     
       # Compute document name
-      reviewStage <- ifelse(reviewStage == "technical",
-                            "TechnicalReview",
-                            ifelse(reviewStage == "general",
-                                   "GeneralReview",
-                                   "SteeringCommittee"))
-      doc <- paste0("Summary_", reviewStage, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
+      reviewStageLabel <- ifelse(reviewStage == "technical",
+                                 "TechnicalReview",
+                                 ifelse(reviewStage == "general",
+                                        "GeneralReview",
+                                        "SteeringCommittee"))
+      doc <- paste0("Summary_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
       
       # Save
       doc <- renderInlineCode(template, doc)
