@@ -915,10 +915,22 @@ form_conversion <- function(KBAforms, reviewStage){
         spp <- spp[lapply(spp, "%%", 2) == 0]
         
         for(i in spp){
-          if(elementsSummary[i] == elementsSummary[i+1]){
-            extraCall <- paste0(extraCall, ", as_chunk(x=', '), as_chunk(x=X", i-1, ")")
+          
+          if(!i == spp[length(spp)]){
+            
+            if(elementsSummary[i] == elementsSummary[i+1]){
+              extraCall <- paste0(extraCall, ", as_chunk(x=', '), as_chunk(x=X", i-1, ")")
+            }else{
+              extraCall <- paste0(extraCall, ", as_chunk(x=', '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')")
+            }
+            
           }else{
-            extraCall <- paste0(extraCall, ", as_chunk(x=', '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')")
+            
+            if(elementsSummary[i] == elementsSummary[i+1]){
+              extraCall <- paste0(extraCall, ", as_chunk(x=' and '), as_chunk(x=X", i-1, ")")
+            }else{
+              extraCall <- paste0(extraCall, ", as_chunk(x=' and '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')")
+            }
           }
         }
       }
@@ -953,10 +965,22 @@ form_conversion <- function(KBAforms, reviewStage){
         spp <- spp[lapply(spp, "%%", 2) == 0]
         
         for(i in spp){
-          if(elementsSummary[i-1] == elementsSummary[i]){
-            extraCall <- paste0(extraCall, ", as_chunk(x=', ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+          
+          if(!i == spp[length(spp)]){
+            
+            if(elementsSummary[i-1] == elementsSummary[i]){
+              extraCall <- paste0(extraCall, ", as_chunk(x=', ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+            }else{
+              extraCall <- paste0(extraCall, ", as_chunk(x=', ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+            }
+            
           }else{
-            extraCall <- paste0(extraCall, ", as_chunk(x=', ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+            
+            if(elementsSummary[i-1] == elementsSummary[i]){
+              extraCall <- paste0(extraCall, ", as_chunk(x=' and ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+            }else{
+              extraCall <- paste0(extraCall, ", as_chunk(x=' and ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+            }
           }
         }
       }
