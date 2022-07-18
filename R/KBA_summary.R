@@ -149,7 +149,7 @@ form_conversion <- function(KBAforms, reviewStage){
             
             alternativeName <- species$`Alternative name to display`[i] %>%
               str_to_sentence()
-            alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "Sensitive taxon", alternativeName)
+            alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "A sensitive taxon", alternativeName)
             
                         # Display taxonomic group?
             if(species$`Display taxonomic group?`[i] == "No"){
