@@ -134,12 +134,12 @@ form_conversion <- function(KBAforms, reviewStage){
       }
       
                   # Redact sensitive information
-      if((!formVersion %in% c(1, 1.1)) & (!reviewStage == "technical")){
+      if((!formVersion %in% c(1, 1.1)) & (reviewStage == "general")){
         
                         # Check that the Public Display section is filled out
         if(sum(is.na(species$`Display taxonomic group?`), is.na(species$`Display taxon name?`), is.na(species$`Display assessment information?`), is.na(species$`Display internal boundary?`)) > 0){
           convert_res[step,"Result"] <- emo::ji("prohibited")
-          convert_res[step,"Error"] <- paste0("You are requesting a summary for ", ifelse(reviewStage == "general", "General Review", "Steering Committee submission"), " and the Public Display section of the KBA Canada Proposal Form is not filled out. Please fill out this section before you proceed with ", ifelse(reviewStage == "general", "General Review.", "Steering Committee submission."))
+          convert_res[step,"Error"] <- "You are requesting a summary for General Review and the Public Display section of the KBA Canada Proposal Form is not filled out. Please fill out this section before you proceed with General Review."
           KBAforms[step] <- NA
           next
           
@@ -267,7 +267,7 @@ form_conversion <- function(KBAforms, reviewStage){
         filter(!is.na(`short citation`))
       
                   # Redact sensitive citations
-      if(!reviewStage == "technical"){
+      if(reviewStage == "general"){
         citations %<>% mutate(Sensitive = ifelse(grepl("SENSITIVE", citations$`short citation`, T), T, F)) %>%
           filter(!Sensitive)
       }
