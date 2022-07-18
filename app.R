@@ -143,7 +143,7 @@ shinyjs::hide("downloadData")
   getReviewStage <- reactive({
     if(input$stageRev == "technicalRev") return("technical")
     if(input$stageRev == "generalRev") return("general")
-    if(input$stageRev == "steergingRev") return("steering")
+    if(input$stageRev == "steeringRev") return("steering")
   })
 
   r <- reactiveValues(convertRes = NULL)
