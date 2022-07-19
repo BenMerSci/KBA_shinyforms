@@ -1,4 +1,4 @@
-form_conversion <- function(KBAforms, reviewStage){
+form_conversion <- function(KBAforms, reviewStage, language){
   
   withProgress(message = "Converting forms", value = 0, {
     

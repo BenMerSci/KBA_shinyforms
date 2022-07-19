@@ -84,6 +84,7 @@ ui <- fluidPage(
             inputId = "language",
             label = h4("English",
                        style = "margin-top: -15%; display: inline"),
+            value = F,
             inline = T,
             right = F,
             width="50%"),
@@ -162,12 +163,17 @@ shinyjs::hide("downloadData")
     if(input$stageRev == "generalRev") return("general")
     if(input$stageRev == "steeringRev") return("steering")
   })
+  
+  getLanguage <- reactive({
+    if(!input$language) return("english")
+    if(input$language) return("french")
+  })
 
   r <- reactiveValues(convertRes = NULL)
 
   observeEvent(input$runScript, {
     shinyjs::disable("runScript")
-    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, reviewStage = getReviewStage())
+    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, reviewStage = getReviewStage(), language = getLanguage())
 
     output$resTable <- renderTable(r$convertRes[[2]])
 
