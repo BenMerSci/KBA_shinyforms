@@ -11,6 +11,7 @@ library(lubridate)
 library(janitor)
 library(googledrive)
 library(emo)
+library(shinyWidgets)
 
 # Authenticate googledrive
 # Informations to authenticate are stored in an .Rprofile
@@ -48,16 +49,16 @@ ui <- fluidPage(
         h3("How to proceed:"),
         hr(),
         h4("1- Select review stage."),
-        h4("2- Upload the desired proposals to convert."),
-        h4("3- Click convert button to summarize."),
+        h4("2- Select language."),
+        h4("3- Upload the desired proposals to convert."),
+        h4("4- Click convert button to summarize."),
         h4("(Process might take a couple seconds to start)"),
-        h4("4- Check result table to see which
+        h4("5- Check result table to see which
          proposals were correctly processed."),
-        h4("5- Download!"),
+        h4("6- Download!"),
         hr(),
         h5("Developed by Benjamin Mercier and
          Chloé Debyser for the KBA Canada Secretariat"),
-        br(),
         h6("Source code",
          tags$a(href = "https://github.com/BenMerSci/KBA_shinyforms",
          icon("github", "fa-2x"))),
@@ -68,11 +69,27 @@ ui <- fluidPage(
     column(width = 4,
       wellPanel(class = "well", h2("Input"),
         hr(),
-          radioButtons("stageRev", h3("Select review stage"),
-           choices = list("Technical review" = "technicalRev",
-           "General review" = "generalRev",
-           "Steering Committee" = "steeringRev"),
-           selected = "technicalRev", inline = TRUE),
+        
+        radioButtons(
+          "stageRev",
+          h3("Select review stage"),
+          choices = list("Technical Review" = "technicalRev",
+                         "General Review" = "generalRev",
+                         "Steering Committee" = "steeringRev"),
+          selected = "technicalRev", inline = TRUE),
+        
+        tags$div(
+          h3("Select language"),
+          materialSwitch(
+            inputId = "language",
+            label = h4("English",
+                       style = "margin-top: -15%; display: inline"),
+            inline = T,
+            right = F,
+            width="50%"),
+          tags$span(h4("Français",
+                       style = "margin-left: -28%; display: inline"))
+        ),
 
           fileInput("file", label = h3("Upload your proposal(s)"),
            placeholder = "or drop files here",
