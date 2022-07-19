@@ -1231,12 +1231,26 @@ form_conversion <- function(KBAforms, reviewStage, language){
       }
     
       # Compute document name
-      reviewStageLabel <- ifelse(reviewStage == "technical",
-                                 "TechnicalReview",
-                                 ifelse(reviewStage == "general",
-                                        "GeneralReview",
-                                        "SteeringCommittee"))
-      doc <- paste0("Summary_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
+      if(language == "english"){
+        
+        reviewStageLabel <- ifelse(reviewStage == "technical",
+                                   "TechnicalReview",
+                                   ifelse(reviewStage == "general",
+                                          "GeneralReview",
+                                          "SteeringCommittee"))
+        
+        doc <- paste0("Summary_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
+        
+      }else{
+        
+        reviewStageLabel <- ifelse(reviewStage == "technical",
+                                   "RévisionTechnique",
+                                   ifelse(reviewStage == "general",
+                                          "RévisionGénérale",
+                                          "ComitéDeGestion"))
+        
+        doc <- paste0("Sommaire_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
+      }
       
       # Save
       doc <- renderInlineCode(template, doc)
