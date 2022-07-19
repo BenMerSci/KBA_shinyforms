@@ -1158,6 +1158,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       #### Save KBA summary
       # Get template
+      if(language == "english"){
         if(reviewStage == "technical"){
           if(scope == "Global and National"){
             googledrive::drive_download("https://docs.google.com/document/d/1--Qh4Dif9Cr8RNS9u1ODcsVvXEDLBIEG", overwrite = TRUE)
@@ -1192,6 +1193,42 @@ form_conversion <- function(KBAforms, reviewStage, language){
             template <- "KBASummary_Template_NewForm_NoQuestions_SteeringCommittee_National.docx"
           }
         }
+      }else if(language == "french"){
+        if(reviewStage == "technical"){
+          if(scope == "Global and National"){
+            googledrive::drive_download("https://docs.google.com/document/d/1NUno1-6dkFdMprf6RsmidllJxrKAyD1Z", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_TechnicalReview_GlobalNational_FR.docx"
+          }else if(scope == "Global"){
+            googledrive::drive_download("https://docs.google.com/document/d/1NW2wqngvZvI-R3rr7oEeZKaVHY5ukU5m", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_TechnicalReview_Global_FR.docx"
+          }else if(scope == "National"){
+            googledrive::drive_download("https://docs.google.com/document/d/1NISUHtepMym56gpsbUajqqBmTqhHZCrs", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_TechnicalReview_National_FR.docx"
+          }
+        }else if(reviewStage == "general"){
+          if(scope == "Global and National"){
+            googledrive::drive_download("https://docs.google.com/document/d/1OQercOMhVcQiNsSXHwlRaytt81Z_PuCI", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_GeneralReview_GlobalNational_FR.docx"
+          }else if(scope == "Global"){
+            googledrive::drive_download("https://docs.google.com/document/d/1NF4meIDvSh4r4GjU-laJkXpx4Wh0hDQc", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_GeneralReview_Global_FR.docx"
+          }else if(scope == "National"){
+            googledrive::drive_download("https://docs.google.com/document/d/1OQTGhjCkivzS4xvUe07GrZockY5LtOJz", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_GeneralReview_National_FR.docx"
+          }
+        }else if(reviewStage == "steering"){
+          if(scope == "Global and National"){
+            googledrive::drive_download("https://docs.google.com/document/d/1NXgSTVfKOIDT7WXMUATLSTZdAGz_YLGN", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_SteeringCommittee_GlobalNational_FR.docx"
+          }else if(scope == "Global"){
+            googledrive::drive_download("https://docs.google.com/document/d/1O25cTlzetd5VCLW2wXDsdqN356XwwanN", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_SteeringCommittee_Global_FR.docx"
+          }else if(scope == "National"){
+            googledrive::drive_download("https://docs.google.com/document/d/1NX2bERMqURwZNWmLdph6vrAI1e-TJAr_", overwrite = TRUE)
+            template <- "KBASummary_Template_NewForm_NoQuestions_SteeringCommittee_National_FR.docx"
+          }
+        }
+      }
     
       # Compute document name
       reviewStageLabel <- ifelse(reviewStage == "technical",
