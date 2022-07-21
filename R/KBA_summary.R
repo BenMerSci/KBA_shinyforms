@@ -30,8 +30,8 @@ form_conversion <- function(KBAforms, reviewStage, language){
     
           # Jurisdiction
     if(language == "french"){
-      googledrive::drive_download("https://drive.google.com/file/d/1wioR9TRHuotrPtCnhcQETPnVllZd-4Zv", overwrite = TRUE)
-      xwalk_jurisdiction <- read.csv("Jurisdiction.csv")
+      googledrive::drive_download("https://docs.google.com/spreadsheets/d/1UAouhO7S2ojZrkrbIFWZHXwyFKeDcQbE", overwrite = TRUE)
+      xwalk_jurisdiction <- read.xlsx("Jurisdiction.xlsx")
     }
     
           # Threat
