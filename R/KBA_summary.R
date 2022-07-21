@@ -1406,7 +1406,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
         if(language == "english"){
           additionalInfo[nrow(additionalInfo)+1, ] <- c("Biodiversity elements that were assessed but did not meet KBA criteria", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
         }else{
-          additionalInfo[nrow(additionalInfo)+1, ] <- c("Eléments de biodiversité évalués qui n’atteignent pas les critères KBA", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
+          additionalInfo[nrow(additionalInfo)+1, ] <- c("Éléments de biodiversité évalués qui n’atteignent pas les critères KBA", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
         }
       }
       
@@ -1421,7 +1421,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       if(language == "english"){
         additionalInfo[nrow(additionalInfo)+1, ] <- c("Customary jurisdiction at site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
       }else{
-        additionalInfo[nrow(additionalInfo)+1, ] <- c("Jurisdiction coutumière au site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Juridiction coutumière au site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
       }
       
             # Customary jurisdiction source
@@ -1430,7 +1430,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
         if(language == "english"){
           additionalInfo[nrow(additionalInfo)+1, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
         }else{
-          additionalInfo[nrow(additionalInfo)+1, ] <- c("Source de l'information sur la jurisdiction coutumière", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
+          additionalInfo[nrow(additionalInfo)+1, ] <- c("Source de l'information sur la juridiction coutumière", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
         }
       }
       
