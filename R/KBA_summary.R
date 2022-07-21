@@ -5,10 +5,49 @@ form_conversion <- function(KBAforms, reviewStage, language){
     # Options
     options(scipen = 999)
     
-    # Load criteria definitions
-    googledrive::drive_download("https://docs.google.com/spreadsheets/d/1c-2sbnvOfp3hjw5UqVYKC64QmqW205B0/edit?usp=sharing&ouid=104844399648613391324&rtpof=true&sd=true", overwrite = TRUE)
-    criteria_definitions <- read.xlsx("KBACriteria_Definitions.xlsx")
+    # Load crosswalks
+          # Assessment Paramter
+    if(language == "french"){
+      googledrive::drive_download("https://docs.google.com/spreadsheets/d/1Tdfbakn1CHnOhzvdlqi2mq48QblTbDDP", overwrite = TRUE)
+      xwalk_assessmentParameter <- read.xlsx("AssessmentParameter.xlsx")
+    }
+    
+          # Conservation Action
+    if(language == "french"){
+      googledrive::drive_download("https://docs.google.com/spreadsheets/d/1TcnYlIBNOkRdhdCqW325WSwHWEWrWZtQ", overwrite = TRUE)
+      xwalk_conservationAction <- read.xlsx("ConservationAction.xlsx")
+    }
+    
+          # Criterion
+    googledrive::drive_download("https://docs.google.com/spreadsheets/d/1TB8LJvQNZd2OhBmSXzc2vPsICSnyYaaS", overwrite = TRUE)
+    xwalk_criterion <- read.xlsx("Criterion.xlsx")
 
+          # Derivation Of Best Estimate
+    if(language == "french"){
+      googledrive::drive_download("https://docs.google.com/spreadsheets/d/1ToAUYfdcM1A_uI8hevOQGvf1vt8LN3TS", overwrite = TRUE)
+      xwalk_derivationOfBestEstimate <- read.xlsx("DerivationOfBestEstimate.xlsx")
+    }
+    
+          # Jurisdiction
+    if(language == "french"){
+      googledrive::drive_download("https://drive.google.com/file/d/1wioR9TRHuotrPtCnhcQETPnVllZd-4Zv", overwrite = TRUE)
+      xwalk_jurisdiction <- read.csv("Jurisdiction.csv")
+    }
+    
+          # Threat
+    if(language == "french"){
+      googledrive::drive_download("https://docs.google.com/spreadsheets/d/1TpTyNQC4J_wdpgRtvdSBu1m899t9MsN9", overwrite = TRUE)
+      xwalk_threat <- read.xlsx("Threat.xlsx")
+    }
+    
+    # Load species list
+    if(language == "french"){
+      googledrive::drive_download("https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ", overwrite = T)
+      masterSpeciesList <- read_excel("Ref_Species.xlsx", sheet=2)
+      write_excel_csv(masterSpeciesList, file="Ref_Species.csv")
+      masterSpeciesList <- read_csv("Ref_Species.csv")
+    }
+    
     # Create a dataframe to store the success/failure state of each conversion
     convert_res <- data.frame(matrix(ncol=3))
     colnames(convert_res) <- c("Name","Result","Message")
@@ -127,16 +166,149 @@ form_conversion <- function(KBAforms, reviewStage, language){
         filter(!is.na(`Common name`)) %>%
         mutate(`Common name` = trimws(`Common name`),
                `Scientific name` = trimws(`Scientific name`),
-               Sensitive = F)
+               Sensitive = F) %>%
+        mutate(`Derivation of best estimate` = ifelse(`Derivation of best estimate` == "Other (please add further details in column AA)", "Other", `Derivation of best estimate`)) %>%
+        mutate(`Derivation of best estimate` = ifelse(language == "english", `Derivation of best estimate`, xwalk_derivationOfBestEstimate[which(xwalk_derivationOfBestEstimate$DerivationOfBestEstimate_EN == `Derivation of best estimate`), "DerivationOfBestEstimate_FR"]))
       
       if(formVersion %in% c(1, 1.1)){
         colnames(species)[which(colnames(species) == "RU Source")] <- "RU source"
       }
       
-                  # Redact sensitive information
+      # If French is requested, translate the species common names to French
+      if(language == "french"){
+        
+        species %<>%
+          left_join(., masterSpeciesList[,c("ELEMENT_CODE", "NATIONAL_FR_NAME")], by=c("NatureServe Element Code" = "ELEMENT_CODE")) %>%
+          mutate(`Common name` = NATIONAL_FR_NAME) %>%
+          select(-NATIONAL_FR_NAME)
+        
+        if(sum(is.na(species$`Common name`)) > 0){
+          
+          if(!sum(species$`NatureServe Element Code` %in% masterSpeciesList$ELEMENT_CODE) == nrow(species)){
+            convert_res[step,"Result"] <- emo::ji("prohibited")
+            convert_res[step,"Message"] <- "Some values for NatureServe Element Code (3. SPECIES tab) are not recognized. Please cross-check your entries with the master species list."
+            KBAforms[step] <- NA
+            next
+            
+          }else{
+            convert_res[step,"Result"] <- emo::ji("prohibited")
+            convert_res[step,"Message"] <- "Some species do not have a French common name in the master species list. Please contact Chloé and provide this error message."
+            KBAforms[step] <- NA
+            next
+          }
+        }
+      }
+      
+      # If two common names are provided, only keep the first
+      for(i in 1:nrow(species)){
+        
+        if(grepl(";", species$`Common name`[i])){
+          species$`Common name`[i] %<>% substr(., start=1, stop=unlist(gregexpr(";", species$`Common name`[i]))-1)
+        }
+      }
+      
+      # Only retain information in the desired language
+      for(i in 1:nrow(species)){
+      
+        for(j in 1:ncol(species)){
+          
+          if(grepl("FRANCAIS", species[i,j]) | grepl("ENGLISH", species[i,j])){
+            
+            # Initiate language check
+            checkFR <- F
+            checkEN <- F
+            
+            # Get index of FRANCAIS annotation
+            if(grepl("FRANCAIS", species[i,j])){
+              checkFR <- T
+              startFR <- unlist(gregexpr("FRANCAIS", species[i,j]))
+            }
+            
+            # Get index of ENGLISH annotation
+            if(grepl("ENGLISH", species[i,j])){
+              checkEN <- T
+              startEN <- unlist(gregexpr("ENGLISH", species[i,j]))
+            }
+            
+            # Get desired text
+            if(checkFR & checkEN){
+              
+              if(startFR < startEN){
+                FR <- substr(species[i,j], start=startFR + nchar("FRANCAIS"), stop=startEN-1)
+                EN <- substr(species[i,j], start=startEN + nchar("ENGLISH"), stop=nchar(species[i,j]))
+                  
+              }else{
+                FR <- substr(species[i,j], start=startFR + nchar("FRANCAIS"), stop=nchar(species[i,j]))
+                EN <- substr(species[i,j], start=startEN + nchar("ENGLISH"), stop=startFR-1)
+              }
+              
+              if(language == "english"){
+                final <- EN
+                
+              }else{
+                final <- FR
+              }
+              
+            }else if(checkFR){
+              
+              if(language == "french"){
+                final <- substr(species[i,j], start=startFR + nchar("FRANCAIS"), stop=nchar(species[i,j]))
+                
+              }else{
+                convert_res[step,"Result"] <- emo::ji("prohibited")
+                convert_res[step,"Message"] <- paste0("The summary was requested in English, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in English. Please enter the information in English, preceded by the text 'ENGLISH -'.")
+                KBAforms[step] <- NA
+                next
+              }
+              
+            }else if(checkEN){
+              
+              if(language == "english"){
+                final <- substr(species[i,j], start=startEN + nchar("ENGLISH"), stop=nchar(species[i,j]))
+                
+              }else{
+                convert_res[step,"Result"] <- emo::ji("prohibited")
+                convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'.")
+                KBAforms[step] <- NA
+                next
+              }
+            }
+            
+            # Trim front characters
+            if(substr(final, start=1, stop=3) == " - "){
+              final <- substr(final, start=4, stop=nchar(final))
+            }
+            
+            if(substr(final, start=1, stop=2) == " -"){
+              final <- substr(final, start=3, stop=nchar(final))
+            }
+            
+            if(substr(final, start=1, stop=1) == "-"){
+              final <- substr(final, start=2, stop=nchar(final))
+            }
+            
+            # Trim white spaces
+            final <- trimws(final, "both")
+            
+            # Assign to correct species entry
+            species[i,j] <- final
+            
+          }else{
+            
+            if(language=="french" & colnames(species)[j] %in% c("Composition of 10 RUs", "Explanation of site estimates", "Explanation of reference estimates")){
+              convert_res[step,"Result"] <- emo::ji("prohibited")
+              convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'. Information in English should be preceded by 'ENGLISH -'.")
+              KBAforms[step] <- NA
+              next
+            }
+          }
+        }
+      }
+      
+      # Redact sensitive information
       if((!formVersion %in% c(1, 1.1)) & (reviewStage == "general")){
         
-                        # Check that the Public Display section is filled out
+            # Check that the Public Display section is filled out
         if(sum(is.na(species$`Display taxonomic group?`), is.na(species$`Display taxon name?`), is.na(species$`Display assessment information?`), is.na(species$`Display internal boundary?`)) > 0){
           convert_res[step,"Result"] <- emo::ji("prohibited")
           convert_res[step,"Message"] <- "You are requesting a summary for General Review and the Public Display section of the KBA Canada Proposal Form is not filled out. Please fill out this section before you proceed with General Review."
@@ -149,9 +321,13 @@ form_conversion <- function(KBAforms, reviewStage, language){
             
             alternativeName <- species$`Alternative name to display`[i] %>%
               str_to_sentence()
-            alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "A sensitive taxon", alternativeName)
+            if(language == "english"){
+              alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "A sensitive taxon", alternativeName)
+            }else{
+              alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "Une espèce sensible", alternativeName)
+            }
             
-                        # Display taxonomic group?
+              # Display taxonomic group?
             if(species$`Display taxonomic group?`[i] == "No"){
               species$`Taxonomic group`[i] <- "-"
               species$`Common name`[i] <- alternativeName
@@ -159,14 +335,14 @@ form_conversion <- function(KBAforms, reviewStage, language){
               species$Sensitive[i] <- T
             }
             
-                        # Display taxon name?
+              # Display taxon name?
             if(species$`Display taxon name?`[i] == "No"){
               species$`Common name`[i] <- alternativeName
               species$`Scientific name`[i] <- alternativeName
               species$Sensitive[i] <- T
             }
             
-                        # Display assessment information?
+              # Display assessment information?
             if(species$`Display assessment information?`[i] == "No"){
               species$Status[i] <- "-"
               species$`Status assessment agency`[i] <- "-"
@@ -192,7 +368,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
         }
       }
       
-                  # Sort by scientific name
+      # Sort by scientific name
       species %<>% arrange(`Scientific name`)
       
             # 4. ECOSYSTEMS & C
@@ -310,11 +486,20 @@ form_conversion <- function(KBAforms, reviewStage, language){
                   # Jurisdiction
       juris <<- site$GENERAL[which(site$Field == "Province or Territory")]
       
+      if(language == "french"){
+        juris <<- xwalk_jurisdiction %>%
+          .[which(.$Province_EN == juris), "Province_FR"]
+      }
+      
                   # Latitude and Longitude
       lat <<- site$GENERAL[which(site$Field == "Latitude (dd.dddd)")] %>%
         as.numeric(.) %>%
         round(., 3)
-      lat <<- ifelse(is.na(lat), "coordinates unspecified", lat)
+      if(language == "english"){
+        lat <<- ifelse(is.na(lat), "coordinates unspecified", lat)
+      }else{
+        lat <<- ifelse(is.na(lat), "coordonnées non spécifiées", lat)
+      }
       
       lon <<- site$GENERAL[which((site$Field == "Longitude (dd.dddd)" | site$Field == "Longitude (ddd.dddd)"))] %>%
         as.numeric(.) %>%
@@ -322,11 +507,19 @@ form_conversion <- function(KBAforms, reviewStage, language){
       lon <<- ifelse(is.na(lon), "", paste0("/", lon))
       
             # 3. KBA Scope
-      scope <<- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
-                      "Global and National",
-                      ifelse(grepl("g", home[13,4], fixed=T),
-                             "Global",
-                             "National"))
+      if(language == "english"){
+        scope <<- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
+                         "Global and National",
+                         ifelse(grepl("g", home[13,4], fixed=T),
+                                "Global",
+                                "National"))
+      }else{
+        scope <<- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
+                         "Mondial et National",
+                         ifelse(grepl("g", home[13,4], fixed=T),
+                                "Mondial",
+                                "National"))
+      }
       
             # 4. Proposal Development Lead
       if(formVersion %in% c(1, 1.1)){
@@ -336,31 +529,64 @@ form_conversion <- function(KBAforms, reviewStage, language){
       }
       
             # 7. Site Description
-      siteDescription <<- site$GENERAL[which(site$Field == "Site description")]
+      if(language == "english"){
+        siteDescription <<- site$GENERAL[which(site$Field == "Site description")]
+      }else{
+        siteDescription <<- site$FRENCH[which(site$Field == "Site description")]
+      }
       
             # 8. Assessment Details - KBA Trigger Species
-      includeGlobalTriggers <<- ifelse(scope %in% c("Global and National", "Global"), "GLOBAL", "")
-      includeNationalTriggers <<- ifelse(scope %in% c("Global and National", "National"), "NATIONAL", "")
+      if(language == "english"){
+        includeGlobalTriggers <<- ifelse(scope %in% c("Global and National", "Global"), "GLOBAL", "")
+        includeNationalTriggers <<- ifelse(scope %in% c("Global and National", "National"), "NATIONAL", "")
+      }else{
+        includeGlobalTriggers <<- ifelse(scope %in% c("Mondial et National", "Mondial"), "NIVEAU MONDIAL", "")
+        includeNationalTriggers <<- ifelse(scope %in% c("Mondial et National", "National"), "NIVEAU NATIONAL", "")
+      }
       
             # 10. Delineation Rationale
-      delineationRationale <<- site$GENERAL[which(site$Field == "Delineation rationale")]
+      if(language == "english"){
+        delineationRationale <<- site$GENERAL[which(site$Field == "Delineation rationale")]
+      }else{
+        delineationRationale <<- site$FRENCH[which(site$Field == "Delineation rationale")]
+      }
       
             # 12. General Review
       noFeedback <<- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")]
       noFeedback <<- ifelse(is.na(noFeedback), "None", noFeedback)
       
             # 13. Additional Site Information
-      nominationRationale <- site$GENERAL[which(site$Field == "Rationale for nomination")]
-      additionalBiodiversity <- site$GENERAL[which(site$Field == "Additional biodiversity")]
-      customaryJurisdiction <- site$GENERAL[which(site$Field == "Customary jurisdiction")]
+      if(language == "english"){
+        nominationRationale <- site$GENERAL[which(site$Field == "Rationale for nomination")]
+        additionalBiodiversity <- site$GENERAL[which(site$Field == "Additional biodiversity")]
+        customaryJurisdiction <- site$GENERAL[which(site$Field == "Customary jurisdiction")]
+      }else{
+        nominationRationale <- site$FRENCH[which(site$Field == "Rationale for nomination")]
+        additionalBiodiversity <- site$FRENCH[which(site$Field == "Additional biodiversity")]
+        customaryJurisdiction <- site$FRENCH[which(site$Field == "Customary jurisdiction")]
+      }
       
       if(formVersion %in% c(1, 1.1)){
+        
         siteHistory <- NA
-        conservation <- site$GENERAL[which(site$Field == "Site management")]
+        
+        if(language == "english"){
+          conservation <- site$GENERAL[which(site$Field == "Site management")]
+        }else{
+          conservation <- site$FRENCH[which(site$Field == "Site management")]
+        }
+        
       }else{
-        customaryJurisdictionSource <- site$GENERAL[which(site$Field == "Customary jurisdiction source")]
-        siteHistory <- site$GENERAL[which(site$Field == "Site history")]
-        conservation <- site$GENERAL[which(site$Field == "Conservation")]
+        
+        if(language == "english"){
+          customaryJurisdictionSource <- site$GENERAL[which(site$Field == "Customary jurisdiction source")]
+          siteHistory <- site$GENERAL[which(site$Field == "Site history")]
+          conservation <- site$GENERAL[which(site$Field == "Conservation")]
+        }else{
+          customaryJurisdictionSource <- site$FRENCH[which(site$Field == "Customary jurisdiction source")]
+          siteHistory <- site$FRENCH[which(site$Field == "Site history")]
+          conservation <- site$FRENCH[which(site$Field == "Conservation")]
+        }
       }
       
       # Prepare flextables
@@ -381,7 +607,14 @@ form_conversion <- function(KBAforms, reviewStage, language){
         mutate(Scope = ifelse(grepl("g", CriteriaFull, fixed=T), "Global", "National")) %>%
         mutate(Criteria = sapply(CriteriaFull, function(x) substr(x, start=2, stop=nchar(x)))) %>%
         arrange(Scope, Criteria) %>%
-        mutate(Definition = sapply(1:nrow(.), function(x) criteria_definitions[which(criteria_definitions$Criteria == .$Criteria[x]), .$Scope[x]]))
+        mutate(Definition = sapply(1:nrow(.), function(x) xwalk_criterion[which(xwalk_criterion$Criterion == .$Criteria[x]), paste0(.$Scope[x], ifelse(language=="EN", "_EN", "_FR"))]))
+      
+      if(language == "french"){
+        criteriaInfo %<>%
+          mutate(Scope = ifelse(Scope == "Global",
+                                 "Mondial",
+                                 Scope))
+      }
       
                   # Number of species
       maxCol <- max(sapply(species$`Criteria met`[which(!is.na(species$`Criteria met`))], function(x) str_count(x, ";")))+1
@@ -413,8 +646,15 @@ form_conversion <- function(KBAforms, reviewStage, language){
       criteriaInfo_ft <- criteriaInfo %>%
         mutate(Label = "") %>%
         mutate(Blank = "") %>%
-        flextable(col_keys = c("Blank", "Label")) %>%
-        compose(j='Label', value=as_paragraph(as_chunk(x=paste0(as.character("\u25CF"), " ", Scope, " ", Criteria, " [criterion met by ", NSpecies, " species]", " - ", Definition, " (")), as_chunk(x=speciesNames, props=fp_text(font.size=11, font.family='Calibri', italic=T)), as_chunk(x=")."))) %>%
+        flextable(col_keys = c("Blank", "Label"))
+      
+      if(language == "english"){
+        criteriaInfo_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(x=paste0(as.character("\u25CF"), " ", Scope, " ", Criteria, " [criterion met by ", NSpecies, ifelse(NSpecies == 1, " taxon]", " taxa]"), " - ", Definition, " (")), as_chunk(x=speciesNames, props=fp_text(font.size=11, font.family='Calibri', italic=T)), as_chunk(x=").")))
+      }else{
+        criteriaInfo_ft %<>% compose(j='Label', value=as_paragraph(as_chunk(x=paste0(as.character("\u25CF"), " ", Criteria, " ", Scope, " [critère rempli par ", NSpecies, ifelse(NSpecies == 1, " taxon]", " taxons]"), " - ", Definition, " (")), as_chunk(x=speciesNames, props=fp_text(font.size=11, font.family='Calibri', italic=T)), as_chunk(x=").")))
+      }
+       
+      criteriaInfo_ft %<>% 
         font(fontname="Calibri", part="body") %>%
         fontsize(size=11, part='body') %>%
         width(j=colnames(.), width=c(0.3, 9)) %>%
@@ -431,15 +671,24 @@ form_conversion <- function(KBAforms, reviewStage, language){
         mutate(Blank = "") %>%
         mutate(Status = ifelse(grepl("A1", `Criteria met`, fixed=T),
                                ifelse(`Status assessment agency` == "-", "-", paste0(Status, " (", `Status assessment agency`, ")")),
-                               "Not applicable")) %>%
+                               ifelse(language == "english",
+                                      "Not applicable",
+                                      "Non applicable"))) %>%
         mutate(SiteEstimate_Min = as.character(`Min site estimate`),
                SiteEstimate_Best = as.character(`Best site estimate`),
                SiteEstimate_Max = as.character(`Max site estimate`),
                TotalEstimate_Min = as.character(`Min reference estimate`),
                TotalEstimate_Best = as.character(`Best reference estimate`),
                TotalEstimate_Max = as.character(`Max reference estimate`)) %>%
-        mutate(AssessmentParameter = sapply(`Assessment parameter`, function(x) str_to_sentence(substr(x, start=str_locate(x, "\\)")[1,1]+2, stop=nchar(x))))) %>%
-        mutate(AssessmentParameter = ifelse(AssessmentParameter %in% c("Area of occupancy", "Extent of suitable habitat", "Range"), paste(AssessmentParameter, "(km2)"), AssessmentParameter)) %>%
+        mutate(AssessmentParameter = sapply(`Assessment parameter`, function(x) str_to_sentence(substr(x, start=str_locate(x, "\\)")[1,1]+2, stop=nchar(x)))))
+      
+      if(language == "french"){
+        speciesAssessments %<>%
+          mutate(AssessmentParameter = xwalk_assessmentParameter[which(xwalk_assessmentParameter$AssessmentParameter_EN == AssessmentParameter), "AssessmentParameter_FR"])
+      }
+        
+      speciesAssessments %<>%
+        mutate(AssessmentParameter = ifelse(AssessmentParameter %in% c("Area of occupancy", "Zone d'occupation", "Extent of suitable habitat", "Étendue de l'habitat approprié", "Range", "Aire de répartition"), paste(AssessmentParameter, "(km2)"), AssessmentParameter)) %>%
         select(`Scientific name`, Status, `Criteria met`, `Reproductive Units (RU)`, `Composition of 10 RUs`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite, Sensitive)
       
                   # Separate global and national assessments
@@ -468,12 +717,22 @@ form_conversion <- function(KBAforms, reviewStage, language){
         mutate(`Explanation of site estimates` = sapply(`Explanation of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Sources of site estimates` = sapply(`Sources of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Explanation of reference estimates` = sapply(`Explanation of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
-        mutate(`Sources of reference estimates` = sapply(`Sources of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
-        mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
-        mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
-        mutate(Reference_Source = paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`, " Source(s) of global estimate(s): ", `Sources of reference estimates`)) %>%
-        select(RU_Source, Site_Source, Reference_Source, Sensitive)
+        mutate(`Sources of reference estimates` = sapply(`Sources of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))
       
+      if(language == "english"){
+        footnotes_g %<>%
+          mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
+          mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
+          mutate(Reference_Source = paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`, " Source(s) of global estimate(s): ", `Sources of reference estimates`)) %>%
+          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+      }else{
+        footnotes_g %<>%
+          mutate(RU_Source = paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`)) %>%
+          mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
+          mutate(Reference_Source = paste0("Explication de(s) estimation(s) mondiale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) mondiale(s) : ", `Sources of reference estimates`)) %>%
+          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+      }
+        
       footnotes_n <- speciesAssessments_n %>%
         select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`, Sensitive) %>%
         mutate(`Composition of 10 RUs` = sapply(`Composition of 10 RUs`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
@@ -482,11 +741,21 @@ form_conversion <- function(KBAforms, reviewStage, language){
         mutate(`Explanation of site estimates` = sapply(`Explanation of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Sources of site estimates` = sapply(`Sources of site estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Explanation of reference estimates` = sapply(`Explanation of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
-        mutate(`Sources of reference estimates` = sapply(`Sources of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
-        mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
-        mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
-        mutate(Reference_Source = paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`, " Source(s) of national estimate(s): ", `Sources of reference estimates`)) %>%
-        select(RU_Source, Site_Source, Reference_Source, Sensitive)
+        mutate(`Sources of reference estimates` = sapply(`Sources of reference estimates`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))
+      
+      if(language == "english"){
+        footnotes_n %<>%
+          mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
+          mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
+          mutate(Reference_Source = paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`, " Source(s) of national estimate(s): ", `Sources of reference estimates`)) %>%
+          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+      }else{
+        footnotes_n %<>%
+          mutate(RU_Source = paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`)) %>%
+          mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
+          mutate(Reference_Source = paste0("Explication de(s) estimation(s) nationale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) nationale(s) : ", `Sources of reference estimates`)) %>%
+          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+      }
       
                   # Information for the main table
       speciesAssessments_g %<>% select(-c(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`))
@@ -530,10 +799,21 @@ form_conversion <- function(KBAforms, reviewStage, language){
         if(bestOnly_g){
           speciesAssessments_g_ft <- speciesAssessments_g %>%
             select(-Sensitive) %>%
-            flextable() %>%
-            width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
-            set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'Global Estimate', PercentAtSite = "% of Global Pop. at Site")) %>%
-            add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", 'Global Estimate', "% of Global Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1)) %>%
+            flextable()
+          
+          if(language == "english"){
+            speciesAssessments_g_ft %<>%
+              width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'Global Estimate', PercentAtSite = "% of Global Pop. at Site")) %>%
+              add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", 'Global Estimate', "% of Global Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
+          }else{
+            speciesAssessments_g_ft %<>%
+              width(j=colnames(.), width=c(1.5,1,0.85,1.2,1.3,0.05,0.7,0.7,0.9,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Espèce", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reproductives", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Best = "Valeur", `Year of site estimate` = "Année", TotalEstimate_Best = 'Estimation mondiale', PercentAtSite = "% de la pop. mondiale au site")) %>%
+              add_header_row(values = c("Espèce", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reproductives", "Paramètre d’évaluation", "", "Estimation au site", "Estimation mondiale", "% de la pop. mondiale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
+          }
+          
+          speciesAssessments_g_ft %<>%  
             align(align = "center", part="header") %>%
             font(fontname="Calibri", part="header") %>%
             fontsize(size=11, part='header') %>%
@@ -555,10 +835,21 @@ form_conversion <- function(KBAforms, reviewStage, language){
             select(-Sensitive) %>%
             mutate(Blank2 = "") %>%
             relocate(Blank2, .after = `Year of site estimate`) %>%
-            flextable() %>%
-            width(j=colnames(.), width=c(1.4,1.2,0.65,1.1,0.9,0.05,0.4,0.4,0.4,0.5,0.05,0.4,0.4,0.4,0.8)) %>%
-            set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of Global Pop. at Site")) %>%
-            add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "Global Estimate", "% of Global Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1)) %>%
+            flextable()
+          
+          if(language == "english"){
+            speciesAssessments_g_ft %<>%
+              width(j=colnames(.), width=c(1.4,1.2,0.65,1.1,0.9,0.05,0.4,0.4,0.4,0.5,0.05,0.4,0.4,0.4,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of Global Pop. at Site")) %>%
+              add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "Global Estimate", "% of Global Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
+          }else{
+            speciesAssessments_g_ft %<>%
+              width(j=colnames(.), width=c(0.9,0.8,0.75,0.8,1,0.05,0.4,0.8,0.5,0.6,0.05,0.4,0.8,0.5,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Espèce", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reprod.", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Meilleure", SiteEstimate_Max = "Max", `Year of site estimate` = "Année", TotalEstimate_Min = "Min", TotalEstimate_Best = 'Meilleure', TotalEstimate_Max = "Max", PercentAtSite = "% de la pop. mondiale au site")) %>%
+              add_header_row(values = c("Espèce", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reprod.", "Paramètre d’évaluation", "", "Estimation au site", "", "Estimation mondiale", "% de la pop. mondiale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
+          }
+          
+          speciesAssessments_g_ft %<>%  
             align(align = "center", part="header") %>%
             font(fontname="Calibri", part="header") %>%
             fontsize(size=11, part='header') %>%
@@ -584,10 +875,21 @@ form_conversion <- function(KBAforms, reviewStage, language){
         if(bestOnly_n){
           speciesAssessments_n_ft <- speciesAssessments_n %>%
             select(-Sensitive) %>%
-            flextable() %>%
-            width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
-            set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'National Estimate', PercentAtSite = "% of National Pop. at Site")) %>%
-            add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", 'National Estimate', "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1)) %>%
+            flextable()
+          
+          if(language == "english"){
+            speciesAssessments_n_ft %<>%
+              width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'National Estimate', PercentAtSite = "% of National Pop. at Site")) %>%
+              add_header_row(values = c("Taxon", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", 'National Estimate', "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
+          }else{
+            speciesAssessments_n_ft %<>%
+              width(j=colnames(.), width=c(1.5,1,0.85,1.2,1.3,0.05,0.7,0.7,0.9,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reproductives", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Best = "Valeur", `Year of site estimate` = "Année", TotalEstimate_Best = 'Estimation nationale', PercentAtSite = "% de la pop. nationale au site")) %>%
+              add_header_row(values = c("Taxon", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reproductives", "Paramètre d’évaluation", "", "Estimation au site", "Estimation nationale", "% de la pop. nationale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
+          }
+          
+          speciesAssessments_n_ft %<>%
             align(align = "center", part="header") %>%
             font(fontname="Calibri", part="header") %>%
             fontsize(size=11, part='header') %>%
@@ -609,10 +911,21 @@ form_conversion <- function(KBAforms, reviewStage, language){
             select(-Sensitive) %>%
             mutate(Blank2 = "") %>%
             relocate(Blank2, .after = `Year of site estimate`) %>%
-            flextable() %>%
-            width(j=colnames(.), width=c(1.4,1.2,0.65,1.1,0.9,0.05,0.4,0.4,0.4,0.5,0.05,0.4,0.4,0.4,0.8)) %>%
-            set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of National Pop. at Site")) %>%
-            add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "National Estimate", "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1)) %>%
+            flextable()
+          
+          if(language == "english"){
+            speciesAssessments_n_ft %<>%
+              width(j=colnames(.), width=c(1.4,1.2,0.65,1.1,0.9,0.05,0.4,0.4,0.4,0.5,0.05,0.4,0.4,0.4,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of National Pop. at Site")) %>%
+              add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "National Estimate", "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
+          }else{
+            speciesAssessments_n_ft %<>%
+              width(j=colnames(.), width=c(0.9,0.8,0.75,0.8,1,0.05,0.4,0.8,0.5,0.6,0.05,0.4,0.8,0.5,0.8)) %>%
+              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reprod.", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Meilleure", SiteEstimate_Max = "Max", `Year of site estimate` = "Année", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = 'Meilleure', TotalEstimate_Max = "Max", PercentAtSite = "% de la pop. nationale au site")) %>%
+              add_header_row(values = c("Taxon", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reprod.", "Paramètre d’évaluation", "", "Estimation au site", "", "Estimation nationale", "% de la pop. nationale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
+          }
+          
+          speciesAssessments_n_ft %<>%
             align(align = "center", part="header") %>%
             font(fontname="Calibri", part="header") %>%
             fontsize(size=11, part='header') %>%
@@ -739,7 +1052,12 @@ form_conversion <- function(KBAforms, reviewStage, language){
             }
           }else{
             footnote <- footnote+1
-            speciesAssessments_g_ft %<>% footnote(i=i, j=1, value=as_paragraph(as.character("For more information, please contact the KBA Canada Secretariat.")), ref_symbols=as.integer(footnote))
+            
+            if(language == "english"){
+              speciesAssessments_g_ft %<>% footnote(i=i, j=1, value=as_paragraph(as.character("For more information, please contact the KBA Canada Secretariat.")), ref_symbols=as.integer(footnote))
+            }else{
+              speciesAssessments_g_ft %<>% footnote(i=i, j=1, value=as_paragraph(as.character("Pour d'avantage d'informations, merci de contacter le Secrétariat KBA Canada.")), ref_symbols=as.integer(footnote))
+            }
           }
         }
       }
@@ -901,7 +1219,9 @@ form_conversion <- function(KBAforms, reviewStage, language){
         select(-Type) %>%
         t() %>%
         data.frame() %>%
-        mutate(Prefix = paste0(as.character("\u25CF"), " Species: "))
+        mutate(Prefix = ifelse(language=="english",
+                               paste0(as.character("\u25CF"), " Species: "),
+                               paste0(as.character("\u25CF"), " Espèce(s) : ")))
       elementsSummary <- elementsSummary[,c(ncol(elementsSummary), 1:(ncol(elementsSummary)-1))]
       
       elementsSummary_ft <- flextable(elementsSummary, col_keys = c("Blank", "Label"), defaults=list(fontname="Calibri", font.size=11)) %>%
@@ -927,9 +1247,13 @@ form_conversion <- function(KBAforms, reviewStage, language){
           }else{
             
             if(elementsSummary[i] == elementsSummary[i+1]){
-              extraCall <- paste0(extraCall, ", as_chunk(x=' and '), as_chunk(x=X", i-1, ")")
+              extraCall <- ifelse(language == "english",
+                                  paste0(extraCall, ", as_chunk(x=' and '), as_chunk(x=X", i-1, ")"),
+                                  paste0(extraCall, ", as_chunk(x=' et '), as_chunk(x=X", i-1, ")"))
             }else{
-              extraCall <- paste0(extraCall, ", as_chunk(x=' and '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')")
+              extraCall <- ifelse(language == "english",
+                                  paste0(extraCall, ", as_chunk(x=' and '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')"),
+                                  paste0(extraCall, ", as_chunk(x=' et '), as_chunk(x=X", i-1, "), as_chunk(x=' ('), as_chunk(x=X", i, ", props=fp_text(font.size=11, font.family='Calibri', italic = T)), as_chunk(x=')')"))
             }
           }
         }
@@ -977,9 +1301,13 @@ form_conversion <- function(KBAforms, reviewStage, language){
           }else{
             
             if(elementsSummary[i-1] == elementsSummary[i]){
-              extraCall <- paste0(extraCall, ", as_chunk(x=' and ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+              extraCall <- ifelse(language=="english",
+                                  paste0(extraCall, ", as_chunk(x=' and ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))"),
+                                  paste0(extraCall, ", as_chunk(x=' et ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))"))
             }else{
-              extraCall <- paste0(extraCall, ", as_chunk(x=' and ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))")
+              extraCall <- ifelse(language=="english",
+                                  paste0(extraCall, ", as_chunk(x=' and ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))"),
+                                  paste0(extraCall, ", as_chunk(x=' et ', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i-1, ", props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=' (', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A')), as_chunk(x=X", i, ", props=fp_text(font.size=12, font.family='Calibri', italic = T, color='#5A5A5A')), as_chunk(x=')', props=fp_text(font.size=12, font.family='Calibri', color='#5A5A5A'))"))
             }
           }
         }
@@ -1051,11 +1379,20 @@ form_conversion <- function(KBAforms, reviewStage, language){
                                    stringsAsFactors = F)
       
             # Nomination rationale
-      additionalInfo[1, ] <- c("Rationale for site nomination", nominationRationale)
+      if(language == "english"){
+        additionalInfo[1, ] <- c("Rationale for site nomination", nominationRationale)
+      }else{
+        additionalInfo[1, ] <- c("Justification de la proposition", nominationRationale)
+      }
       
             # Site history
       if(!is.na(siteHistory)){
-        additionalInfo[2, ] <- c("Site history", siteHistory)
+        
+        if(language == "english"){
+          additionalInfo[2, ] <- c("Site history", siteHistory)
+        }else{
+          additionalInfo[2, ] <- c("Historique du site", siteHistory)
+        }
       }
       
             # Assessed elements that did not meet KBA criteria
@@ -1066,18 +1403,35 @@ form_conversion <- function(KBAforms, reviewStage, language){
           unique() %>%
           paste(., collapse=", ")
       
-        additionalInfo[nrow(additionalInfo)+1, ] <- c("Biodiversity elements that were assessed but did not meet KBA criteria", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
+        if(language == "english"){
+          additionalInfo[nrow(additionalInfo)+1, ] <- c("Biodiversity elements that were assessed but did not meet KBA criteria", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
+        }else{
+          additionalInfo[nrow(additionalInfo)+1, ] <- c("Eléments de biodiversité évalués qui n’atteignent pas les critères KBA", ifelse(speciesNotTriggers == "", "-", speciesNotTriggers))
+        }
       }
       
             # Additional biodiversity
-      additionalInfo[nrow(additionalInfo)+1, ] <- c("Additional biodiversity at the site", ifelse(is.na(additionalBiodiversity), "-", additionalBiodiversity))
+      if(language == "english"){
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Additional biodiversity at the site", ifelse(is.na(additionalBiodiversity), "-", additionalBiodiversity))
+      }else{
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Biodiversité additionnelle au site", ifelse(is.na(additionalBiodiversity), "-", additionalBiodiversity))
+      }
       
             # Customary jurisdiction at site
-      additionalInfo[nrow(additionalInfo)+1, ] <- c("Customary jurisdiction at site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
+      if(language == "english"){
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Customary jurisdiction at site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
+      }else{
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Jurisdiction coutumière au site", ifelse(is.na(customaryJurisdiction), "-", customaryJurisdiction))
+      }
       
             # Customary jurisdiction source
       if(!formVersion %in% c(1, 1.1)){
-        additionalInfo[nrow(additionalInfo)+1, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
+        
+        if(language == "english"){
+          additionalInfo[nrow(additionalInfo)+1, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
+        }else{
+          additionalInfo[nrow(additionalInfo)+1, ] <- c("Source de l'information sur la jurisdiction coutumière", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
+        }
       }
       
             # Conservation
@@ -1087,10 +1441,23 @@ form_conversion <- function(KBAforms, reviewStage, language){
       ongoingActions <- actions %>%
         filter(Ongoing == "TRUE") %>%
         pull(Action) %>%
-        substr(., start=5, stop=nchar(.)) %>%
+        lapply(., function(x) ifelse(x=="None", x, substr(., start=5, stop=nchar(.)))) %>%
+        unlist()
+      
+      if(language == "french"){
+        ongoingActions %<>%
+          lapply(., function(x) xwalk_conservationAction[which(xwalk_conservationAction$ConservationAction_EN == x), "ConservationAction_FR"]) %>%
+          unlist()
+      }
+      
+      ongoingActions %<>%
         paste(., collapse="; ")
       
-      additionalInfo[nrow(additionalInfo)+1, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
+      if(language == "english"){
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Ongoing conservation actions", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "None", ongoingActions))
+      }else{
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Actions de conservation en cours", ifelse((length(ongoingActions) == 0) | (ongoingActions == ""), "Aucune", ongoingActions))
+      }
       
             # Ongoing threats
       if(!noThreats){
@@ -1098,23 +1465,49 @@ form_conversion <- function(KBAforms, reviewStage, language){
           pull(`Level 1`) %>%
           unique() %>%
           substr(., start=3, stop=nchar(.)) %>%
-          trimws() %>%
+          trimws()
+        
+        if(language == "french"){
+          threatText %<>%
+            lapply(., function(x) xwalk_threat[which(xwalk_threat$Threat_EN == x), "Threat_FR"]) %>%
+            unlist %>%
+            trimws()
+        }
+        
+        threatText %<>%
           sort() %>%
           paste(., collapse='; ')
+        
       }else{
         threatText <- "-"
       }
       
-      additionalInfo[nrow(additionalInfo)+1, ] <- c("Ongoing threats", threatText)
+      if(language == "english"){
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Ongoing threats", threatText)
+      }else{
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Menaces actuelles", threatText)
+      }
       
             # Conservation actions needed
       neededActions <- actions %>%
         filter(Needed == "TRUE") %>%
         pull(Action) %>%
-        substr(., start=5, stop=nchar(.)) %>%
+        lapply(., function(x) ifelse(x=="None", x, substr(., start=5, stop=nchar(.)))) %>%
+        unlist()
+      
+      if(language == "french"){
+        neededActions %<>% lapply(., function(x) xwalk_conservationAction[which(xwalk_conservationAction$ConservationAction_EN == x), "ConservationAction_FR"]) %>%
+          unlist()
+      }
+      
+      neededActions %<>%
         paste(., collapse="; ")
       
-      additionalInfo[nrow(additionalInfo)+1, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
+      if(language == "english"){
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Conservation actions needed", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
+      }else{
+        additionalInfo[nrow(additionalInfo)+1, ] <- c("Actions de conservation nécessaires", ifelse((length(neededActions) == 0) | (neededActions == ""), "-", neededActions))
+      }
       
             # Make it a flextable
       additionalInfo_ft <- additionalInfo %>%
@@ -1148,9 +1541,9 @@ form_conversion <- function(KBAforms, reviewStage, language){
         font(fontname="Calibri", part="body")
       
       # List all flextables
-      if(scope == "Global and National"){
+      if(scope %in% c("Global and National", "Mondial et National")){
         FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_g = elementsOnly_g, elementFootnotes_g = footnotesOnly_g, elements_n = elementsOnly_n, elementFootnotes_n = footnotesOnly_n, technicalReview = technicalReview_ft, generalReview = generalReview_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
-      }else if(scope == "Global"){
+      }else if(scope %in% c("Global", "Mondial")){
         FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_g = elementsOnly_g, elementFootnotes_g = footnotesOnly_g, technicalReview = technicalReview_ft, generalReview = generalReview_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
       }else{
         FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_n = elementsOnly_n, elementFootnotes_n = footnotesOnly_n, technicalReview = technicalReview_ft, generalReview = generalReview_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
@@ -1195,10 +1588,10 @@ form_conversion <- function(KBAforms, reviewStage, language){
         }
       }else if(language == "french"){
         if(reviewStage == "technical"){
-          if(scope == "Global and National"){
+          if(scope == "Mondial et National"){
             googledrive::drive_download("https://docs.google.com/document/d/1NUno1-6dkFdMprf6RsmidllJxrKAyD1Z", overwrite = TRUE)
             template <- "KBASummary_Template_NewForm_NoQuestions_TechnicalReview_GlobalNational_FR.docx"
-          }else if(scope == "Global"){
+          }else if(scope == "Mondial"){
             googledrive::drive_download("https://docs.google.com/document/d/1NW2wqngvZvI-R3rr7oEeZKaVHY5ukU5m", overwrite = TRUE)
             template <- "KBASummary_Template_NewForm_NoQuestions_TechnicalReview_Global_FR.docx"
           }else if(scope == "National"){
@@ -1206,10 +1599,10 @@ form_conversion <- function(KBAforms, reviewStage, language){
             template <- "KBASummary_Template_NewForm_NoQuestions_TechnicalReview_National_FR.docx"
           }
         }else if(reviewStage == "general"){
-          if(scope == "Global and National"){
+          if(scope == "Mondial et National"){
             googledrive::drive_download("https://docs.google.com/document/d/1OQercOMhVcQiNsSXHwlRaytt81Z_PuCI", overwrite = TRUE)
             template <- "KBASummary_Template_NewForm_NoQuestions_GeneralReview_GlobalNational_FR.docx"
-          }else if(scope == "Global"){
+          }else if(scope == "Mondial"){
             googledrive::drive_download("https://docs.google.com/document/d/1NF4meIDvSh4r4GjU-laJkXpx4Wh0hDQc", overwrite = TRUE)
             template <- "KBASummary_Template_NewForm_NoQuestions_GeneralReview_Global_FR.docx"
           }else if(scope == "National"){
@@ -1217,10 +1610,10 @@ form_conversion <- function(KBAforms, reviewStage, language){
             template <- "KBASummary_Template_NewForm_NoQuestions_GeneralReview_National_FR.docx"
           }
         }else if(reviewStage == "steering"){
-          if(scope == "Global and National"){
+          if(scope == "Mondial et National"){
             googledrive::drive_download("https://docs.google.com/document/d/1NXgSTVfKOIDT7WXMUATLSTZdAGz_YLGN", overwrite = TRUE)
             template <- "KBASummary_Template_NewForm_NoQuestions_SteeringCommittee_GlobalNational_FR.docx"
-          }else if(scope == "Global"){
+          }else if(scope == "Mondial"){
             googledrive::drive_download("https://docs.google.com/document/d/1O25cTlzetd5VCLW2wXDsdqN356XwwanN", overwrite = TRUE)
             template <- "KBASummary_Template_NewForm_NoQuestions_SteeringCommittee_Global_FR.docx"
           }else if(scope == "National"){
