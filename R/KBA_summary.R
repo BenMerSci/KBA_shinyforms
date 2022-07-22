@@ -214,8 +214,10 @@ form_conversion <- function(KBAforms, reviewStage, language){
       }
       
       # Only retain information in the desired language
-      for(i in 1:nrow(species)){
+      error <- F
       
+      for(i in 1:nrow(species)){
+        
         for(j in 1:ncol(species)){
           
           if(grepl("FRANCAIS", species[i,j]) | grepl("ENGLISH", species[i,j])){
@@ -264,7 +266,8 @@ form_conversion <- function(KBAforms, reviewStage, language){
                 convert_res[step,"Result"] <- emo::ji("prohibited")
                 convert_res[step,"Message"] <- paste0("The summary was requested in English, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in English. Please enter the information in English, preceded by the text 'ENGLISH -'.")
                 KBAforms[step] <- NA
-                next
+                error <- T
+                break
               }
               
             }else if(checkEN){
@@ -276,7 +279,8 @@ form_conversion <- function(KBAforms, reviewStage, language){
                 convert_res[step,"Result"] <- emo::ji("prohibited")
                 convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'.")
                 KBAforms[step] <- NA
-                next
+                error <- T
+                break
               }
             }
             
@@ -305,10 +309,19 @@ form_conversion <- function(KBAforms, reviewStage, language){
               convert_res[step,"Result"] <- emo::ji("prohibited")
               convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'. Information in English should be preceded by 'ENGLISH -'.")
               KBAforms[step] <- NA
-              next
+              error <- T
+              break
             }
           }
         }
+        
+        if(error){
+          break
+        }
+      }
+      
+      if(error){
+        next
       }
       
       # Redact sensitive information
@@ -709,10 +722,10 @@ form_conversion <- function(KBAforms, reviewStage, language){
         mutate(`Criteria met` = substr(`Criteria met`, start=2, stop=nchar(`Criteria met`)))
       
       if(!(nrow(speciesAssessments_g) + nrow(speciesAssessments_n)) == nrow(speciesAssessments)){
-    	convert_res[step,"Result"] <- emo::ji("prohibited")
-            convert_res[step,"Message"] <- "Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message."
-            KBAforms[step] <- NA
-            next
+        convert_res[step,"Result"] <- emo::ji("prohibited")
+        convert_res[step,"Message"] <- "Some assessments are not being correctly classified as global or national assessments. This is an error with the code. Please contact Chloé and provide her with this error message."
+        KBAforms[step] <- NA
+        next
     	}
       rm(speciesAssessments)
       
