@@ -167,8 +167,14 @@ form_conversion <- function(KBAforms, reviewStage, language){
         mutate(`Common name` = trimws(`Common name`),
                `Scientific name` = trimws(`Scientific name`),
                Sensitive = F) %>%
-        mutate(`Derivation of best estimate` = ifelse(`Derivation of best estimate` == "Other (please add further details in column AA)", "Other", `Derivation of best estimate`)) %>%
-        mutate(`Derivation of best estimate` = ifelse(language == "english", `Derivation of best estimate`, xwalk_derivationOfBestEstimate[which(xwalk_derivationOfBestEstimate$DerivationOfBestEstimate_EN == `Derivation of best estimate`), "DerivationOfBestEstimate_FR"]))
+        mutate(`Derivation of best estimate` = ifelse(`Derivation of best estimate` == "Other (please add further details in column AA)", "Other", `Derivation of best estimate`))
+      
+      if(language == "french"){
+        species %<>%
+          left_join(., xwalk_derivationOfBestEstimate, by=c("Derivation of best estimate" = "DerivationOfBestEstimate_EN")) %>%
+          mutate(`Derivation of best estimate` = DerivationOfBestEstimate_FR) %>%
+          select(-DerivationOfBestEstimate_FR)
+      }
       
       if(formVersion %in% c(1, 1.1)){
         colnames(species)[which(colnames(species) == "RU Source")] <- "RU source"
@@ -684,7 +690,9 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       if(language == "french"){
         speciesAssessments %<>%
-          mutate(AssessmentParameter = xwalk_assessmentParameter[which(xwalk_assessmentParameter$AssessmentParameter_EN == AssessmentParameter), "AssessmentParameter_FR"])
+          left_join(., xwalk_assessmentParameter[,c("AssessmentParameter_EN", "AssessmentParameter_FR")], by=c("AssessmentParameter" = "AssessmentParameter_EN")) %>%
+          mutate(AssessmentParameter = AssessmentParameter_FR) %>%
+          select(-AssessmentParameter_FR)
       }
         
       speciesAssessments %<>%
@@ -1441,7 +1449,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       ongoingActions <- actions %>%
         filter(Ongoing == "TRUE") %>%
         pull(Action) %>%
-        lapply(., function(x) ifelse(x=="None", x, substr(., start=5, stop=nchar(.)))) %>%
+        lapply(., function(x) ifelse(x=="None", x, substr(x, start=5, stop=nchar(x)))) %>%
         unlist()
       
       if(language == "french"){
@@ -1451,6 +1459,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       }
       
       ongoingActions %<>%
+        sort() %>%
         paste(., collapse="; ")
       
       if(language == "english"){
@@ -1492,7 +1501,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       neededActions <- actions %>%
         filter(Needed == "TRUE") %>%
         pull(Action) %>%
-        lapply(., function(x) ifelse(x=="None", x, substr(., start=5, stop=nchar(.)))) %>%
+        lapply(., function(x) ifelse(x=="None", x, substr(x, start=5, stop=nchar(x)))) %>%
         unlist()
       
       if(language == "french"){
@@ -1501,6 +1510,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       }
       
       neededActions %<>%
+        sort() %>%
         paste(., collapse="; ")
       
       if(language == "english"){
