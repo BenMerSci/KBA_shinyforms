@@ -343,7 +343,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
             if(language == "english"){
               alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "A sensitive taxon", alternativeName)
             }else{
-              alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "Une espèce sensible", alternativeName)
+              alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "Un taxon sensible", alternativeName)
             }
             
               # Display taxonomic group?
