@@ -938,7 +938,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
             speciesAssessments_n_ft %<>%
               width(j=colnames(.), width=c(1.4,1.2,0.65,1.1,0.9,0.05,0.4,0.4,0.4,0.5,0.05,0.4,0.4,0.4,0.8)) %>%
               set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of National Pop. at Site")) %>%
-              add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "National Estimate", "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
+              add_header_row(values = c("Taxon", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "National Estimate", "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
           }else{
             speciesAssessments_n_ft %<>%
               width(j=colnames(.), width=c(0.9,0.8,0.75,0.8,1,0.05,0.4,0.8,0.5,0.6,0.05,0.4,0.8,0.5,0.8)) %>%
