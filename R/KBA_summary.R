@@ -626,7 +626,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
         mutate(Scope = ifelse(grepl("g", CriteriaFull, fixed=T), "Global", "National")) %>%
         mutate(Criteria = sapply(CriteriaFull, function(x) substr(x, start=2, stop=nchar(x)))) %>%
         arrange(Scope, Criteria) %>%
-        mutate(Definition = sapply(1:nrow(.), function(x) xwalk_criterion[which(xwalk_criterion$Criterion == .$Criteria[x]), paste0(.$Scope[x], ifelse(language=="EN", "_EN", "_FR"))]))
+        mutate(Definition = sapply(1:nrow(.), function(x) xwalk_criterion[which(xwalk_criterion$Criterion == .$Criteria[x]), paste0(.$Scope[x], ifelse(language=="english", "_EN", "_FR"))]))
       
       if(language == "french"){
         criteriaInfo %<>%
