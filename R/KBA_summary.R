@@ -526,7 +526,6 @@ form_conversion <- function(KBAforms, reviewStage, language){
       lon <<- ifelse(is.na(lon), "", paste0("/", lon))
       
             # 3. KBA Scope
-      criteriaMet <- 
       if(language == "english"){
         scope <<- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
                          "Global and National",
@@ -611,6 +610,9 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       # Prepare flextables
             # Criteria information
+                  # Get data
+      criteriaMet <- home$X4[which(home$X3 == "Criteria met")]
+      
                   # Check that at least one criterion is met
       if(is.na(criteriaMet)){
     	convert_res[step,"Result"] <- emo::ji("prohibited")
