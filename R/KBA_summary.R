@@ -740,13 +740,13 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       if(language == "english"){
         footnotes_g %<>%
-          mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
+          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`))) %>%
           mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`, " Source(s) of global estimate(s): ", `Sources of reference estimates`)) %>%
           select(RU_Source, Site_Source, Reference_Source, Sensitive)
       }else{
         footnotes_g %<>%
-          mutate(RU_Source = paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`)) %>%
+          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`))) %>%
           mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explication de(s) estimation(s) mondiale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) mondiale(s) : ", `Sources of reference estimates`)) %>%
           select(RU_Source, Site_Source, Reference_Source, Sensitive)
@@ -764,13 +764,13 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       if(language == "english"){
         footnotes_n %<>%
-          mutate(RU_Source = paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`)) %>%
+          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`))) %>%
           mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`, " Source(s) of national estimate(s): ", `Sources of reference estimates`)) %>%
           select(RU_Source, Site_Source, Reference_Source, Sensitive)
       }else{
         footnotes_n %<>%
-          mutate(RU_Source = paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`)) %>%
+          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`))) %>%
           mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explication de(s) estimation(s) nationale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) nationale(s) : ", `Sources of reference estimates`)) %>%
           select(RU_Source, Site_Source, Reference_Source, Sensitive)
