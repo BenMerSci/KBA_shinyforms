@@ -713,11 +713,11 @@ form_conversion <- function(KBAforms, reviewStage, language){
                   # Separate global and national assessments
       speciesAssessments_g <- speciesAssessments %>%
         filter(grepl("g", `Criteria met`, fixed=T)) %>%
-        mutate(`Criteria met` = substr(`Criteria met`, start=2, stop=nchar(`Criteria met`)))
+        mutate(`Criteria met` = gsub("g", "", `Criteria met`))
       
       speciesAssessments_n <- speciesAssessments %>%
         filter(grepl("n", `Criteria met`, fixed=T)) %>%
-        mutate(`Criteria met` = substr(`Criteria met`, start=2, stop=nchar(`Criteria met`)))
+        mutate(`Criteria met` = gsub("n", "", `Criteria met`))
       
       if(!(nrow(speciesAssessments_g) + nrow(speciesAssessments_n)) == nrow(speciesAssessments)){
         convert_res[step,"Result"] <- emo::ji("prohibited")
