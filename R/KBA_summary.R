@@ -305,7 +305,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
             
           }else{
             
-            if(language=="french" & colnames(species)[j] %in% c("Composition of 10 RUs", "Explanation of site estimates", "Explanation of reference estimates")){
+            if(language=="french" & colnames(species)[j] %in% c("Composition of 10 RUs", "Explanation of site estimates", "Explanation of reference estimates") & !is.na(species[i,j])){
               convert_res[step,"Result"] <- emo::ji("prohibited")
               convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'. Information in English should be preceded by 'ENGLISH -'.")
               KBAforms[step] <- NA
@@ -526,6 +526,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       lon <<- ifelse(is.na(lon), "", paste0("/", lon))
       
             # 3. KBA Scope
+      criteriaMet <- 
       if(language == "english"){
         scope <<- ifelse(grepl("g", home[13,4], fixed=T) & grepl("n", home[13,4], fixed=T),
                          "Global and National",
@@ -610,9 +611,6 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       # Prepare flextables
             # Criteria information
-                  # Get data
-      criteriaMet <- home$X4[which(home$X3 == "Criteria met")]
-      
                   # Check that at least one criterion is met
       if(is.na(criteriaMet)){
     	convert_res[step,"Result"] <- emo::ji("prohibited")
