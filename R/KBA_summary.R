@@ -729,7 +729,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
                   # Information for the footnotes
       footnotes_g <- speciesAssessments_g %>%
-        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`, Sensitive) %>%
+        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`, Sensitive, `Criteria met`) %>%
         mutate(`Composition of 10 RUs` = sapply(`Composition of 10 RUs`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`RU source` = sapply(`RU source`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Derivation of best estimate` = sapply(`Derivation of best estimate`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>% 
@@ -743,17 +743,19 @@ form_conversion <- function(KBAforms, reviewStage, language){
           mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`))) %>%
           mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`, " Source(s) of global estimate(s): ", `Sources of reference estimates`)) %>%
-          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Meets criterion D1b because it is one of 10 largest aggregations in the world for this taxon.", NA)) %>%
+          select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }else{
         footnotes_g %<>%
           mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`))) %>%
           mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explication de(s) estimation(s) mondiale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) mondiale(s) : ", `Sources of reference estimates`)) %>%
-          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Le site répond au critère D1b, parce qu'il contient une des 10 plus grandes aggrégations au monde pour ce taxon.", NA)) %>%
+          select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }
         
       footnotes_n <- speciesAssessments_n %>%
-        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`, Sensitive) %>%
+        select(`Composition of 10 RUs`, `RU source`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, `Explanation of reference estimates`, `Sources of reference estimates`, Sensitive, `Criteria met`) %>%
         mutate(`Composition of 10 RUs` = sapply(`Composition of 10 RUs`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`RU source` = sapply(`RU source`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>%
         mutate(`Derivation of best estimate` = sapply(`Derivation of best estimate`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, ".")))) %>% 
@@ -767,13 +769,15 @@ form_conversion <- function(KBAforms, reviewStage, language){
           mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`))) %>%
           mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`, " Source(s) of national estimate(s): ", `Sources of reference estimates`)) %>%
-          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Meets criterion D1b because it is one of 10 largest aggregations in Canada for this taxon.", NA)) %>%
+          select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }else{
         footnotes_n %<>%
           mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`))) %>%
           mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
           mutate(Reference_Source = paste0("Explication de(s) estimation(s) nationale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) nationale(s) : ", `Sources of reference estimates`)) %>%
-          select(RU_Source, Site_Source, Reference_Source, Sensitive)
+          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Le site répond au critère D1b, parce qu'il contient une des 10 plus grandes aggrégations au Canada pour ce taxon.", NA)) %>%
+          select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }
       
                   # Information for the main table
@@ -970,7 +974,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
       if(nrow(speciesAssessments_g) > 0){
         footnote <- 0
         for(i in 1:nrow(speciesAssessments_g)){
-          col <- which(grepl("http", footnotes_n[i,]), arr.ind = TRUE)
+          col <- which(grepl("http", footnotes_g[i,]), arr.ind = TRUE)
           
           if(!speciesAssessments_g$Sensitive[i]){
             
@@ -1062,9 +1066,9 @@ form_conversion <- function(KBAforms, reviewStage, language){
                 }else{
                   
                   if(bestOnly_g){
-                    speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                    speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 3, ifelse(c==2, 4, ifelse(c==3, 7, 9))), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
                   }else{
-                    speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                    speciesAssessments_g_ft %<>% footnote(i=i, j=ifelse(c==1, 3, ifelse(c==2, 4, ifelse(c==3, 8, 13))), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
                   }
                 }
               }
@@ -1177,9 +1181,9 @@ form_conversion <- function(KBAforms, reviewStage, language){
                 }else{
                   
                   if(bestOnly_n){
-                    speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                    speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 3, ifelse(c==2, 4, ifelse(c==3, 7, 9))), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
                   }else{
-                    speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
+                    speciesAssessments_n_ft %<>% footnote(i=i, j=ifelse(c==1, 3, ifelse(c==2, 4, ifelse(c==3, 8, 13))), value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
                   }
                 }
               }
