@@ -740,17 +740,23 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       if(language == "english"){
         footnotes_g %<>%
-          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`))) %>%
-          mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
-          mutate(Reference_Source = paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`, " Source(s) of global estimate(s): ", `Sources of reference estimates`)) %>%
-          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Meets criterion D1b because it is one of 10 largest aggregations in the world for this taxon.", NA)) %>%
+          mutate(RU_Source = paste0(ifelse(!is.na(`Composition of 10 RUs`), paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`), ""), ifelse(!is.na(`RU source`), paste0(" Source of RU data: ", `RU source`), ""))) %>%
+          mutate(RU_Source = ifelse(RU_Source == "", NA, RU_Source)) %>%
+          mutate(Site_Source = paste0(ifelse(!is.na(`Derivation of best estimate`), paste0("Derivation of site estimate: ", `Derivation of best estimate`), ""), ifelse(!is.na(`Explanation of site estimates`), paste0(" Explanation of site estimate(s): ", `Explanation of site estimates`), ""), ifelse(!is.na(`Sources of site estimates`), paste0(" Source(s) of site estimate(s): ", `Sources of site estimates`), ""))) %>%
+          mutate(Site_Source = ifelse(Site_Source == "", NA, Site_Source)) %>%
+          mutate(Reference_Source = paste0(ifelse(!is.na(`Explanation of reference estimates`), paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`), ""), ifelse(!is.na(`Sources of reference estimates`), paste0(" Source(s) of global estimate(s): ", `Sources of reference estimates`), ""))) %>%
+          mutate(Reference_Source = ifelse(Reference_Source == "", NA, Reference_Source)) %>%
+          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Meets criterion D1b because it is one of 10 largest aggregations in the world for this species.", NA)) %>%
           select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }else{
         footnotes_g %<>%
-          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`))) %>%
-          mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
-          mutate(Reference_Source = paste0("Explication de(s) estimation(s) mondiale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) mondiale(s) : ", `Sources of reference estimates`)) %>%
-          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Le site répond au critère D1b, parce qu'il contient une des 10 plus grandes aggrégations au monde pour ce taxon.", NA)) %>%
+          mutate(RU_Source = paste0(ifelse(!is.na(`Composition of 10 RUs`), paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`), ""), ifelse(!is.na(`RU source`), paste0(" Source des données d'URs : ", `RU source`), ""))) %>%
+          mutate(RU_Source = ifelse(RU_Source == "", NA, RU_Source)) %>%
+          mutate(Site_Source = paste0(ifelse(!is.na(`Derivation of best estimate`), paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`), ""), ifelse(!is.na(`Explanation of site estimates`), paste0(" Explication de(s) estimation(s) au site : ", `Explanation of site estimates`), ""), ifelse(!is.na(`Sources of site estimates`), paste0(" Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`), ""))) %>%
+          mutate(Site_Source = ifelse(Site_Source == "", NA, Site_Source)) %>%
+          mutate(Reference_Source = paste0(ifelse(!is.na(`Explanation of reference estimates`), paste0("Explication de(s) estimation(s) mondiale(s) : ", `Explanation of reference estimates`), ""), ifelse(!is.na(`Sources of reference estimates`), paste0(" Source(s) de(s) estimation(s) mondiale(s) : ", `Sources of reference estimates`), ""))) %>%
+          mutate(Reference_Source = ifelse(Reference_Source == "", NA, Reference_Source)) %>%
+          mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Le site répond au critère D1b, parce qu'il contient une des 10 plus grandes aggrégations au monde pour cette espèce.", NA)) %>%
           select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }
         
@@ -766,16 +772,22 @@ form_conversion <- function(KBAforms, reviewStage, language){
       
       if(language == "english"){
         footnotes_n %<>%
-          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`, " Source of RU data: ", `RU source`))) %>%
-          mutate(Site_Source = paste0("Derivation of site estimate: ", `Derivation of best estimate`, " Explanation of site estimate(s): ", `Explanation of site estimates`, " Source(s) of site estimate(s): ", `Sources of site estimates`)) %>%
-          mutate(Reference_Source = paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`, " Source(s) of national estimate(s): ", `Sources of reference estimates`)) %>%
+          mutate(RU_Source = paste0(ifelse(!is.na(`Composition of 10 RUs`), paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`), ""), ifelse(!is.na(`RU source`), paste0(" Source of RU data: ", `RU source`), ""))) %>%
+          mutate(RU_Source = ifelse(RU_Source == "", NA, RU_Source)) %>%
+          mutate(Site_Source = paste0(ifelse(!is.na(`Derivation of best estimate`), paste0("Derivation of site estimate: ", `Derivation of best estimate`), ""), ifelse(!is.na(`Explanation of site estimates`), paste0(" Explanation of site estimate(s): ", `Explanation of site estimates`), ""), ifelse(!is.na(`Sources of site estimates`), paste0(" Source(s) of site estimate(s): ", `Sources of site estimates`), ""))) %>%
+          mutate(Site_Source = ifelse(Site_Source == "", NA, Site_Source)) %>%
+          mutate(Reference_Source = paste0(ifelse(!is.na(`Explanation of reference estimates`), paste0("Explanation of national estimate(s): ", `Explanation of reference estimates`), ""), ifelse(!is.na(`Sources of reference estimates`), paste0(" Source(s) of national estimate(s): ", `Sources of reference estimates`), ""))) %>%
+          mutate(Reference_Source = ifelse(Reference_Source == "", NA, Reference_Source)) %>%
           mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Meets criterion D1b because it is one of 10 largest aggregations in Canada for this taxon.", NA)) %>%
           select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }else{
         footnotes_n %<>%
-          mutate(RU_Source = ifelse(is.na(`Composition of 10 RUs`) & is.na(`RU source`), NA, paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`, " Source des données d'URs : ", `RU source`))) %>%
-          mutate(Site_Source = paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`, " Explication de(s) estimation(s) au site : ", `Explanation of site estimates`, " Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`)) %>%
-          mutate(Reference_Source = paste0("Explication de(s) estimation(s) nationale(s) : ", `Explanation of reference estimates`, " Source(s) de(s) estimation(s) nationale(s) : ", `Sources of reference estimates`)) %>%
+          mutate(RU_Source = paste0(ifelse(!is.na(`Composition of 10 RUs`), paste0("Composition de 10 Unités Reproductives (URs) : ", `Composition of 10 RUs`), ""), ifelse(!is.na(`RU source`), paste0(" Source des données d'URs : ", `RU source`), ""))) %>%
+          mutate(RU_Source = ifelse(RU_Source == "", NA, RU_Source)) %>%
+          mutate(Site_Source = paste0(ifelse(!is.na(`Derivation of best estimate`), paste0("Calcul de l'estimation au site : ", `Derivation of best estimate`), ""), ifelse(!is.na(`Explanation of site estimates`), paste0(" Explication de(s) estimation(s) au site : ", `Explanation of site estimates`), ""), ifelse(!is.na(`Sources of site estimates`), paste0(" Source(s) de(s) estimation(s) au site : ", `Sources of site estimates`), ""))) %>%
+          mutate(Site_Source = ifelse(Site_Source == "", NA, Site_Source)) %>%
+          mutate(Reference_Source = paste0(ifelse(!is.na(`Explanation of reference estimates`), paste0("Explication de(s) estimation(s) nationale(s) : ", `Explanation of reference estimates`), ""), ifelse(!is.na(`Sources of reference estimates`), paste0(" Source(s) de(s) estimation(s) nationale(s) : ", `Sources of reference estimates`), ""))) %>%
+          mutate(Reference_Source = ifelse(Reference_Source == "", NA, Reference_Source)) %>%
           mutate(D1b = ifelse(grepl("D1b", `Criteria met`, fixed=T), "Le site répond au critère D1b, parce qu'il contient une des 10 plus grandes aggrégations au Canada pour ce taxon.", NA)) %>%
           select(D1b, RU_Source, Site_Source, Reference_Source, Sensitive)
       }
