@@ -1669,7 +1669,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
                                           "GeneralReview",
                                           "SteeringCommittee"))
         
-        doc <- paste0("Summary_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
+        doc <- paste0("KBASummary_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
         
       }else{
         
@@ -1679,7 +1679,7 @@ form_conversion <- function(KBAforms, reviewStage, language){
                                           "RévisionGénérale",
                                           "ComitéDeGestion"))
         
-        doc <- paste0("Sommaire_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
+        doc <- paste0("SommaireKBA_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
       }
       
       # Save
