@@ -1709,7 +1709,7 @@ summary <- function(KBAforms, reviewStage, language, app){
   }
   
   convert_res <<- convert_res
-  KBAforms <<- KBAforms
+  KBAforms_doc <<- KBAforms
 }
 
 form_conversion <- function(KBAforms, reviewStage, language, app){
@@ -1722,7 +1722,7 @@ form_conversion <- function(KBAforms, reviewStage, language, app){
   
   # List to store the summaries AND the result table that will be displayed on the Shiny app 
   list_item <- list() # list to stock the summaries and a dataframe to see if it's a success or not
-  list_item[[1]] <- KBAforms
+  list_item[[1]] <- KBAforms_doc
   list_item[[2]] <- convert_res
   
   return(list_item)
