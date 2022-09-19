@@ -1709,6 +1709,7 @@ summary <- function(KBAforms, reviewStage, language, app){
   }
   
   convert_res <<- convert_res
+  KBAforms <<- KBAforms
 }
 
 form_conversion <- function(KBAforms, reviewStage, language, app){
