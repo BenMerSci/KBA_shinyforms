@@ -175,7 +175,7 @@ shinyjs::hide("downloadData")
 
   observeEvent(input$runScript, {
     shinyjs::disable("runScript")
-    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, reviewStage = getReviewStage(), language = getLanguage())
+    r$convertRes <- form_conversion(KBAforms = file_df()$datapath, reviewStage = getReviewStage(), language = getLanguage(), app = T)
 
     output$resTable <- renderTable(r$convertRes[[2]])
 

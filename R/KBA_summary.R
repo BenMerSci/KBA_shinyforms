@@ -1,4 +1,4 @@
-form_conversion <- function(KBAforms, reviewStage, language){
+form_conversion <- function(KBAforms, reviewStage, language, app){
   
   withProgress(message = "Converting forms", value = 0, {
     
@@ -62,7 +62,9 @@ form_conversion <- function(KBAforms, reviewStage, language){
         next
       }
     
-      incProgress(1/length(KBAforms), detail = paste("form number ", step))
+      if(app){
+        incProgress(1/length(KBAforms), detail = paste("form number ", step))
+      }
     
       success <- FALSE # Set success to FALSE
       
