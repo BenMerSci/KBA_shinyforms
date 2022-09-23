@@ -1065,7 +1065,7 @@ summary <- function(KBAforms, reviewStage, language, app){
                   }
                 }
                 
-                if(bestOnly){
+                if(bestOnly_g){
                   call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
                 }else{
                   call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
@@ -1180,7 +1180,7 @@ summary <- function(KBAforms, reviewStage, language, app){
                   }
                 }
                 
-                if(bestOnly){
+                if(bestOnly_n){
                   call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 7, 9)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
                 }else{
                   call_final <- paste0("elements_ft %<>% footnote(i=i, j=ifelse(c==1, 4, ifelse(c==2, 8, 13)), value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
