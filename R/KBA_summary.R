@@ -708,8 +708,16 @@ summary <- function(KBAforms, reviewStage, language, app){
     
     speciesAssessments %<>%
       mutate(AssessmentParameter = ifelse(AssessmentParameter %in% c("Area of occupancy", "Zone d'occupation", "Extent of suitable habitat", "Étendue de l'habitat approprié", "Range", "Aire de répartition"), paste(AssessmentParameter, "(km2)"), AssessmentParameter)) %>%
-      select(`Scientific name`, Status, `Criteria met`, `Reproductive Units (RU)`, `Composition of 10 RUs`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite, Sensitive)
+      select(`Scientific name`, `Common name`, `Taxonomic group`, Status, `Criteria met`, `Reproductive Units (RU)`, `Composition of 10 RUs`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite, Sensitive)
     
+                # If general review, then use common name instead of the scientific name for birds
+    if(reviewStage == "general"){
+
+      speciesAssessments %<>%
+        mutate(`Scientific name` = ifelse((`Taxonomic group` == "Aves (birds)") & (!is.na(`Common name`)), `Common name`, `Scientific name`))
+    }
+    speciesAssessments %<>% select(-c(`Common name`, `Taxonomic group`))
+
                 # Separate global and national assessments
     speciesAssessments_g <- speciesAssessments %>%
       filter(grepl("g", `Criteria met`, fixed=T)) %>%
