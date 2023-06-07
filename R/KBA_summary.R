@@ -714,7 +714,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     if(reviewStage == "general"){
 
       speciesAssessments %<>%
-        mutate(`Scientific name` = ifelse(is.na(`Taxonomic group`), `Scientific name`, ifelse((`Taxonomic group` == "Aves (birds)") & (!is.na(`Common name`)), `Common name`, `Scientific name`)))
+        mutate(`Scientific name` = ifelse((`Taxonomic group` == "Aves (birds)") & (!is.na(`Common name`)), `Common name`, `Scientific name`))
     }
     speciesAssessments %<>% select(-c(`Common name`, `Taxonomic group`))
 
