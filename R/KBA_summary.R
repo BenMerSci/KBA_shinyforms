@@ -1407,7 +1407,7 @@ summary <- function(KBAforms, reviewStage, language, app){
         hline_top(part="all")
     }
     
-          # General Review'
+          # General Review
     ncol <- ncol(generalReview)
     generalReview_ft <- generalReview %>%
       flextable() %>%
