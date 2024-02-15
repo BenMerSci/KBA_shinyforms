@@ -548,6 +548,11 @@ summary <- function(KBAforms, reviewStage, language, app){
       proposalLead <<- proposer$Entry[which(proposer$Field == "Name of proposal development lead")]
     }
     
+    if(!is.na(proposer$Entry[which(proposer$Field == "Names and affiliations")])){
+      proposalLead <- trimws(proposalLead) %>%
+        paste(., "Co-proposers:", proposer$Entry[which(proposer$Field == "Names and affiliations")])
+    }
+    
           # 7. Site Description
     if(language == "english"){
       siteDescription <<- site$GENERAL[which(site$Field == "Site description")]
@@ -1404,9 +1409,8 @@ summary <- function(KBAforms, reviewStage, language, app){
     
           # General Review
     generalReview_ft <- generalReview %>%
-      .[,1:3] %>%
       flextable() %>%
-      width(j=colnames(.), width=c(2.4,3.6,3)) %>%
+      width(j=colnames(.), width=c(1.4,2,2,3.6)) %>%
       align(align = "center", part="header") %>%
       font(fontname="Calibri", part="header") %>%
       fontsize(size=11, part='header') %>%
