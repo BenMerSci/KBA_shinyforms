@@ -577,8 +577,8 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
           # 12. General Review
-    noFeedback <<- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")]
-    noFeedback <<- ifelse(is.na(noFeedback), "None", noFeedback)
+    noFeedback <- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")] %>%
+      ifelse(is.na(.), "None", .)
     
           # 13. Additional Site Information
     if(language == "english"){
@@ -1420,6 +1420,16 @@ summary <- function(KBAforms, reviewStage, language, app){
       fontsize(size=11, part='body') %>%
       hline_top(part="all")
     
+          # Reviewers that did not provide feedback
+    noFeedback_ft <- noFeedback %>%
+      as.data.frame() %>%
+      flextable() %>%
+      width(j=colnames(.), width=9) %>%
+      delete_part(., part = "header") %>%
+      font(fontname="Calibri", part="body") %>%
+      fontsize(size=11, part='body') %>%
+      border_remove()
+    
           # Additional Site Information
     additionalInfo <- data.frame(Type = character(),
                                  Value = character(),
@@ -1591,11 +1601,11 @@ summary <- function(KBAforms, reviewStage, language, app){
     
           # List all flextables
     if(scope %in% c("Global and National", "Mondial et National")){
-      FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_g = elementsOnly_g, elementFootnotes_g = footnotesOnly_g, elements_n = elementsOnly_n, elementFootnotes_n = footnotesOnly_n, technicalReview = technicalReview_ft, generalReview = generalReview_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
+      FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_g = elementsOnly_g, elementFootnotes_g = footnotesOnly_g, elements_n = elementsOnly_n, elementFootnotes_n = footnotesOnly_n, technicalReview = technicalReview_ft, generalReview = generalReview_ft, noFeedback = noFeedback_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
     }else if(scope %in% c("Global", "Mondial")){
-      FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_g = elementsOnly_g, elementFootnotes_g = footnotesOnly_g, technicalReview = technicalReview_ft, generalReview = generalReview_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
+      FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_g = elementsOnly_g, elementFootnotes_g = footnotesOnly_g, technicalReview = technicalReview_ft, generalReview = generalReview_ft, noFeedback = noFeedback_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
     }else{
-      FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_n = elementsOnly_n, elementFootnotes_n = footnotesOnly_n, technicalReview = technicalReview_ft, generalReview = generalReview_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
+      FT <- list(subtitle = subtitle_ft, triggerElements = elementsSummary_ft, criteria = criteriaInfo_ft, elements_n = elementsOnly_n, elementFootnotes_n = footnotesOnly_n, technicalReview = technicalReview_ft, generalReview = generalReview_ft, noFeedback = noFeedback_ft, additionalInfo = additionalInfo_ft, references = citations_ft)
     }
     
     #### Save KBA summary
@@ -1702,10 +1712,10 @@ summary <- function(KBAforms, reviewStage, language, app){
     KBAforms[step] <- doc
     
     # If the previous doc object was created, than the conversion was a success
-    sucess <- TRUE
+    success <- TRUE
     
     # Compute the successful conversion into the table
-    if(sucess){
+    if(success){
       convert_res[step,"Result"] <- emo::ji("check")
       
       if(!formVersion %in% c(1, 1.1)){
