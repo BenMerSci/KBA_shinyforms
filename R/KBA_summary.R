@@ -550,7 +550,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     
     if(!is.na(proposer$Entry[which(proposer$Field == "Names and affiliations")])){
       proposalLead <- trimws(proposalLead) %>%
-        paste(., "Co-proposers:", proposer$Entry[which(proposer$Field == "Names and affiliations")])
+        paste0(., ". Co-proposer(s): ", proposer$Entry[which(proposer$Field == "Names and affiliations")])
     }
     
           # 7. Site Description
@@ -1408,10 +1408,15 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
           # General Review
-    ncol <- ncol(generalReview)
+    if(ncol(generalReview) == 3){
+      widths <- c(2.4,3.6,3)
+    }else{
+      widths <- c(1.4,2,2,3.6)
+    }
+   
     generalReview_ft <- generalReview %>%
       flextable() %>%
-      width(j=colnames(.), width=ifelse(ncol==3, c(2.4,3.6,3), c(1.4,2,2,3.6))) %>%
+      width(j=colnames(.), width=widths) %>%
       align(align = "center", part="header") %>%
       font(fontname="Calibri", part="header") %>%
       fontsize(size=11, part='header') %>%
