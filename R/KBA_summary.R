@@ -549,7 +549,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
     if(!is.na(proposer$Entry[which(proposer$Field == "Names and affiliations")])){
-      proposalLead <- trimws(proposalLead) %>%
+      proposalLead <<- trimws(proposalLead) %>%
         paste0(., ". Co-proposer(s): ", proposer$Entry[which(proposer$Field == "Names and affiliations")])
     }
     
