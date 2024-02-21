@@ -14,6 +14,7 @@ library(emo)
 library(shinyWidgets)
 library(readxl)
 library(readr)
+library(devtools)
 
 # Authenticate googledrive
 # Informations to authenticate are stored in an .Rprofile

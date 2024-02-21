@@ -3,6 +3,9 @@ summary <- function(KBAforms, reviewStage, language, app){
   # Options
   options(scipen = 999)
   
+  # Load functions
+  source_url("https://github.com/chloedebyser/KBA-Public/blob/main/KBA%20Functions.R?raw=TRUE")
+  
   # Load crosswalks
         # Assessment Paramter
   if(language == "french"){
@@ -38,13 +41,21 @@ summary <- function(KBAforms, reviewStage, language, app){
     xwalk_threat <- read.xlsx("Threat.xlsx")
   }
   
-  # Load species list
-  if(language == "french"){
-    googledrive::drive_download("https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ", overwrite = T)
-    masterSpeciesList <- read_excel("Ref_Species.xlsx", sheet=2)
-    write_excel_csv(masterSpeciesList, file="Ref_Species.csv")
-    masterSpeciesList <- read_csv("Ref_Species.csv")
-  }
+  # Prepare DB_BIOTICS_ELEMENT_NATIONAL
+        # Load species list
+  googledrive::drive_download("https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ", overwrite = T)
+  masterSpeciesList <- read_excel("Ref_Species.xlsx", sheet=2)
+  write_excel_csv(masterSpeciesList, file="Ref_Species.csv")
+  masterSpeciesList <- read_csv("Ref_Species.csv")
+  
+        # Convert species list to BIOTICS_ELEMENT_NATIONAL
+  DB_BIOTICS_ELEMENT_NATIONAL <- masterSpeciesList %>%
+    {.[, c("SpeciesID", colnames(.)[which(!str_detect(colnames(.), "[[:lower:]]"))])]}
+  colnames(DB_BIOTICS_ELEMENT_NATIONAL) <- tolower(colnames(DB_BIOTICS_ELEMENT_NATIONAL))
+  
+  # Prepare DB_BIOTICS_ECOSYSTEM
+        # Load ecosystem list
+  
   
   # Create a dataframe to store the success/failure state of each conversion
   convert_res <- data.frame(matrix(ncol=3))
@@ -67,6 +78,8 @@ summary <- function(KBAforms, reviewStage, language, app){
     success <- FALSE # Set success to FALSE
     
     # Load KBA Canada Proposal Form
+    read_KBACanadaProposalForm(formPath = KBAforms[step], final = ifelse(reviewStage == "steering", T, F))
+    
           # Load full workbook
     wb <- loadWorkbook(KBAforms[step])
     
