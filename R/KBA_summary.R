@@ -4,7 +4,7 @@ summary <- function(KBAforms, reviewStage, language, app){
   options(scipen = 999)
   
   # Load functions
-  source_url("https://github.com/chloedebyser/KBA-Public/blob/main/KBA%20Functions.R?raw=TRUE")
+  source_url("https://github.com/chloedebyser/KBA-Public/blob/main/KBA%20Functions.R?raw=TRUE", local=TRUE)
   
   # Load crosswalks
         # Assessment Paramter
@@ -454,9 +454,6 @@ summary <- function(KBAforms, reviewStage, language, app){
     }else{
       delineationRationale <<- PF_site$FRENCH[which(PF_site$Field == "Delineation rationale")]
     }
-    
-          # 12. General Review
-    noFeedback <- PF_noReview
     
           # 13. Additional Site Information
     if(language == "english"){
@@ -1292,7 +1289,7 @@ summary <- function(KBAforms, reviewStage, language, app){
       hline_top(part="all")
     
           # Reviewers that did not provide feedback
-    noFeedback_ft <- noFeedback %>%
+    noFeedback_ft <- PF_noReview %>%
       as.data.frame() %>%
       flextable() %>%
       width(j=colnames(.), width=9) %>%
