@@ -98,12 +98,12 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     rm(wb)
     
+    # Load KBA Canada Proposal Form
+    read_KBACanadaProposalForm(formPath = KBAforms[step], final = ifelse(reviewStage == "steering", T, F))
+    
     if(app){
       incProgress(1/length(KBAforms), detail = "TEST")
     }
-    
-    # Load KBA Canada Proposal Form
-    read_KBACanadaProposalForm(formPath = KBAforms[step], final = ifelse(reviewStage == "steering", T, F))
     
     # Handle the site name
           # Get the name
