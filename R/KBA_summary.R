@@ -52,6 +52,7 @@ summary <- function(KBAforms, reviewStage, language, app){
   DB_BIOTICS_ELEMENT_NATIONAL <- masterSpeciesList %>%
     {.[, c("SpeciesID", colnames(.)[which(!str_detect(colnames(.), "[[:lower:]]"))])]}
   colnames(DB_BIOTICS_ELEMENT_NATIONAL) <- tolower(colnames(DB_BIOTICS_ELEMENT_NATIONAL))
+  DB_BIOTICS_ELEMENT_NATIONAL <<- DB_BIOTICS_ELEMENT_NATIONAL
   
   # Prepare DB_BIOTICS_ECOSYSTEM
         # Load ecosystem list
@@ -64,6 +65,7 @@ summary <- function(KBAforms, reviewStage, language, app){
   DB_BIOTICS_ECOSYSTEM <- masterEcosystemList %>%
     {.[, c("EcosystemID", colnames(.)[which(!str_detect(colnames(.), "[[:lower:]]"))])]}
   colnames(DB_BIOTICS_ECOSYSTEM) <- tolower(colnames(DB_BIOTICS_ECOSYSTEM))
+  DB_BIOTICS_ECOSYSTEM <<- DB_BIOTICS_ECOSYSTEM
   
   # Create a dataframe to store the success/failure state of each conversion
   convert_res <- data.frame(matrix(ncol=3))
@@ -97,17 +99,6 @@ summary <- function(KBAforms, reviewStage, language, app){
       next
     }
     rm(wb)
-    
-    if(exists('read_KBACanadaProposalForm', mode='function')){
-      if(app){
-        incProgress(1/length(KBAforms), detail = "EXISTS")
-      }
-    }else{
-      if(app){
-        incProgress(1/length(KBAforms), detail = "DOES NOT EXIST")
-      }
-    }
-    Sys.sleep(30)
     
     # Load KBA Canada Proposal Form
     read_KBACanadaProposalForm(formPath = KBAforms[step], final = ifelse(reviewStage == "steering", T, F))
