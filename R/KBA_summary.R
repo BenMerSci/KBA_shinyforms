@@ -3,10 +3,6 @@ summary <- function(KBAforms, reviewStage, language, app){
   # Options
   options(scipen = 999)
   
-  if(app){
-    incProgress(1/length(KBAforms), detail = "TEST")
-  }
-  
   # Load functions
   source_url("https://github.com/chloedebyser/KBA-Public/blob/main/KBA%20Functions.R?raw=TRUE")
   
@@ -101,6 +97,10 @@ summary <- function(KBAforms, reviewStage, language, app){
       next
     }
     rm(wb)
+    
+    if(app){
+      incProgress(1/length(KBAforms), detail = "TEST")
+    }
     
     # Load KBA Canada Proposal Form
     read_KBACanadaProposalForm(formPath = KBAforms[step], final = ifelse(reviewStage == "steering", T, F))
