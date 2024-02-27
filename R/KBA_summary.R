@@ -3,6 +3,9 @@ summary <- function(KBAforms, reviewStage, language, app){
   # Options
   options(scipen = 999)
   
+  # Load functions
+  source_url("https://github.com/chloedebyser/KBA-Public/blob/main/KBA%20Functions.R?raw=TRUE")
+  
   # Load crosswalks
         # Assessment Paramter
   if(language == "french"){
@@ -38,13 +41,29 @@ summary <- function(KBAforms, reviewStage, language, app){
     xwalk_threat <- read.xlsx("Threat.xlsx")
   }
   
-  # Load species list
-  if(language == "french"){
-    googledrive::drive_download("https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ", overwrite = T)
-    masterSpeciesList <- read_excel("Ref_Species.xlsx", sheet=2)
-    write_excel_csv(masterSpeciesList, file="Ref_Species.csv")
-    masterSpeciesList <- read_csv("Ref_Species.csv")
-  }
+  # Prepare DB_BIOTICS_ELEMENT_NATIONAL
+        # Load species list
+  googledrive::drive_download("https://docs.google.com/spreadsheets/d/1R2ILLvyGMqRL8S9pfZdYIeBKXlyzckKQ", overwrite = T)
+  masterSpeciesList <- read_excel("Ref_Species.xlsx", sheet=2)
+  write_excel_csv(masterSpeciesList, file="Ref_Species.csv")
+  masterSpeciesList <- read_csv("Ref_Species.csv")
+  
+        # Convert species list to BIOTICS_ELEMENT_NATIONAL
+  DB_BIOTICS_ELEMENT_NATIONAL <- masterSpeciesList %>%
+    {.[, c("SpeciesID", colnames(.)[which(!str_detect(colnames(.), "[[:lower:]]"))])]}
+  colnames(DB_BIOTICS_ELEMENT_NATIONAL) <- tolower(colnames(DB_BIOTICS_ELEMENT_NATIONAL))
+  
+  # Prepare DB_BIOTICS_ECOSYSTEM
+        # Load ecosystem list
+  googledrive::drive_download("https://docs.google.com/spreadsheets/d/1BhmzLVFZIs-SzFaH3C3q1RM8ZHZBuJCl", overwrite = T)
+  masterEcosystemList <- read_excel("Ref_Ecosystems.xlsx", sheet=2)
+  write_excel_csv(masterEcosystemList, file="Ref_Ecosystems.csv")
+  masterEcosystemList <- read_csv("Ref_Ecosystems.csv")
+  
+        # Convert ecosystem list to BIOTICS_ECOSYSTEM
+  DB_BIOTICS_ECOSYSTEM <- masterEcosystemList %>%
+    {.[, c("EcosystemID", colnames(.)[which(!str_detect(colnames(.), "[[:lower:]]"))])]}
+  colnames(DB_BIOTICS_ECOSYSTEM) <- tolower(colnames(DB_BIOTICS_ECOSYSTEM))
   
   # Create a dataframe to store the success/failure state of each conversion
   convert_res <- data.frame(matrix(ncol=3))
@@ -66,35 +85,27 @@ summary <- function(KBAforms, reviewStage, language, app){
     
     success <- FALSE # Set success to FALSE
     
-    # Load KBA Canada Proposal Form
+    # Check that the form is a KBA Canada Proposal Form
           # Load full workbook
     wb <- loadWorkbook(KBAforms[step])
     
+          # Check that the correct tabs are present
     if(sum(c("HOME", "1. PROPOSER", "2. SITE", "3. SPECIES","4. ECOSYSTEMS & C", "5. THREATS", "6. REVIEW", "7. CITATIONS", "8. CHECK") %in% getSheetNames(KBAforms[step])) != 9) {
       convert_res[step, "Result"] <- emo::ji("prohibited")
       convert_res[step, "Message"] <- paste(KBAforms[step], "is not a KBA Canada proposal form. If you need a summary for a Legacy single-site form, contact Chloé.")
       KBAforms[step] <- NA
       next
     }
-          # Visible sheets
-    home <- read.xlsx(wb, sheet = "HOME")
-    proposer <- read.xlsx(wb, sheet = "1. PROPOSER")
-    site <- read.xlsx(wb, sheet = "2. SITE")
-    species <- read.xlsx(wb, sheet = "3. SPECIES")
-    ecosystems <- read.xlsx(wb, sheet = "4. ECOSYSTEMS & C")
-    threats <- read.xlsx(wb, sheet = "5. THREATS")
-    review <- read.xlsx(wb, sheet = "6. REVIEW")
-    citations <- read.xlsx(wb, sheet = "7. CITATIONS")
-    check <- read.xlsx(wb, sheet = "8. CHECK")
+    rm(wb)
     
-          # Invisible sheets
-    checkboxes <- read.xlsx(wb, sheet = "checkboxes")
-    resultsSpecies <- read.xlsx(wb, sheet = "results_species")
-    resultsEcosystems <- read.xlsx(wb, sheet = "results_ecosystems")
+    # Load KBA Canada Proposal Form
+    read_KBACanadaProposalForm(formPath = KBAforms[step], final = ifelse(reviewStage == "steering", T, F))
     
     # Handle the site name
           # Get the name
-    name <- site[1,"GENERAL"]
+    name <- PF_site %>%
+      filter(Field == "National name") %>%
+      pull(GENERAL)
     
           # Check that the name exists
     if(is.na(name)){
@@ -123,12 +134,8 @@ summary <- function(KBAforms, reviewStage, language, app){
       next
     }
     
-    # Form version number
-          # Get version
-    formVersion <- home[1,1] %>% substr(., start=9, stop=nchar(.)) %>% as.numeric()
-    
-          # Check compatibility
-    if(!formVersion %in% c(1, 1.1, 1.2)){
+    # Check form version compatibility
+    if(!PF_formVersion %in% c(1, 1.1, 1.2)){
       convert_res[step,"Result"] <- emo::ji("prohibited")
       convert_res[step,"Message"] <- "Form version not supported. Please contact Chloé and provide her with this error message."
       KBAforms[step] <- NA
@@ -136,61 +143,26 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
     # Format the sheets
-          # 1. PROPOSER
-    proposer %<>%
-      .[, 2:3] %>%
-      rename(Field = X2, Entry = X3) %>%
-      filter(!is.na(Field))
-    
-          # 2. SITE
-                # General
-    site %<>%
-      .[, 2:4] %>%
-      rename(Field = X2) %>%
-      filter(!Field == "Ongoing                                                                                           Needed                                                  ")
-    
-                # Conservation actions
-    actionsCol <- which(colnames(checkboxes) == "2..Conservation.actions")
-    
-    actions <- checkboxes %>%
-      .[, actionsCol:(actionsCol+2)]
-    colnames(actions) <- actions[1,]
-    actions %<>%
-      .[2:nrow(.),]
-    
           # 3. SPECIES
-                # General
-    colnames(species) <- species[1,]
-    species %<>%
-      .[2:nrow(.),] %>%
-      filter(!is.na(`Common name`)) %>%
-      mutate(`Common name` = trimws(`Common name`),
-             `Scientific name` = trimws(`Scientific name`),
-             Sensitive = F) %>%
-      mutate(`Derivation of best estimate` = ifelse(`Derivation of best estimate` == "Other (please add further details in column AA)", "Other", `Derivation of best estimate`))
-    
+                # If French is requested, translate the derivation of best estimate to French
     if(language == "french"){
-      species %<>%
+      PF_species %<>%
         left_join(., xwalk_derivationOfBestEstimate, by=c("Derivation of best estimate" = "DerivationOfBestEstimate_EN")) %>%
         mutate(`Derivation of best estimate` = DerivationOfBestEstimate_FR) %>%
         select(-DerivationOfBestEstimate_FR)
     }
     
-    if(formVersion %in% c(1, 1.1)){
-      colnames(species)[which(colnames(species) == "RU Source")] <- "RU source"
-    }
-    
                 # If French is requested, translate the species common names to French
     if(language == "french"){
       
-      species %<>%
+      PF_species %<>%
         left_join(., masterSpeciesList[,c("ELEMENT_CODE", "NATIONAL_FR_NAME")], by=c("NatureServe Element Code" = "ELEMENT_CODE")) %>%
         mutate(`Common name` = NATIONAL_FR_NAME) %>%
         select(-NATIONAL_FR_NAME)
       
-      if(sum(is.na(species$`Common name`)) > 0){
+      if(sum(is.na(PF_species$`Common name`)) > 0){
         
-        if(!sum(species$`NatureServe Element Code` %in% masterSpeciesList$ELEMENT_CODE) == nrow(species)){
+        if(!sum(PF_species$`NatureServe Element Code` %in% masterSpeciesList$ELEMENT_CODE) == nrow(PF_species)){
           convert_res[step,"Result"] <- emo::ji("prohibited")
           convert_res[step,"Message"] <- "Some values for NatureServe Element Code (3. SPECIES tab) are not recognized. Please cross-check your entries with the master species list."
           KBAforms[step] <- NA
@@ -206,48 +178,48 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
                 # If two common names are provided, only keep the first
-    for(i in 1:nrow(species)){
+    for(i in 1:nrow(PF_species)){
       
-      if(grepl(";", species$`Common name`[i])){
-        species$`Common name`[i] %<>% substr(., start=1, stop=unlist(gregexpr(";", species$`Common name`[i]))-1)
+      if(grepl(";", PF_species$`Common name`[i])){
+        PF_species$`Common name`[i] %<>% substr(., start=1, stop=unlist(gregexpr(";", PF_species$`Common name`[i]))-1)
       }
     }
     
                 # Only retain information in the desired language
     error <- F
     
-    for(i in 1:nrow(species)){
+    for(i in 1:nrow(PF_species)){
       
-      for(j in 1:ncol(species)){
+      for(j in 1:ncol(PF_species)){
         
-        if(grepl("FRANCAIS", species[i,j]) | grepl("ENGLISH", species[i,j])){
+        if(grepl("FRANCAIS", PF_species[i,j]) | grepl("ENGLISH", PF_species[i,j])){
           
           # Initiate language check
           checkFR <- F
           checkEN <- F
           
           # Get index of FRANCAIS annotation
-          if(grepl("FRANCAIS", species[i,j])){
+          if(grepl("FRANCAIS", PF_species[i,j])){
             checkFR <- T
-            startFR <- unlist(gregexpr("FRANCAIS", species[i,j]))
+            startFR <- unlist(gregexpr("FRANCAIS", PF_species[i,j]))
           }
           
           # Get index of ENGLISH annotation
-          if(grepl("ENGLISH", species[i,j])){
+          if(grepl("ENGLISH", PF_species[i,j])){
             checkEN <- T
-            startEN <- unlist(gregexpr("ENGLISH", species[i,j]))
+            startEN <- unlist(gregexpr("ENGLISH", PF_species[i,j]))
           }
           
           # Get desired text
           if(checkFR & checkEN){
             
             if(startFR < startEN){
-              FR <- substr(species[i,j], start=startFR + nchar("FRANCAIS"), stop=startEN-1)
-              EN <- substr(species[i,j], start=startEN + nchar("ENGLISH"), stop=nchar(species[i,j]))
+              FR <- substr(PF_species[i,j], start=startFR + nchar("FRANCAIS"), stop=startEN-1)
+              EN <- substr(PF_species[i,j], start=startEN + nchar("ENGLISH"), stop=nchar(PF_species[i,j]))
               
             }else{
-              FR <- substr(species[i,j], start=startFR + nchar("FRANCAIS"), stop=nchar(species[i,j]))
-              EN <- substr(species[i,j], start=startEN + nchar("ENGLISH"), stop=startFR-1)
+              FR <- substr(PF_species[i,j], start=startFR + nchar("FRANCAIS"), stop=nchar(PF_species[i,j]))
+              EN <- substr(PF_species[i,j], start=startEN + nchar("ENGLISH"), stop=startFR-1)
             }
             
             if(language == "english"){
@@ -260,11 +232,11 @@ summary <- function(KBAforms, reviewStage, language, app){
           }else if(checkFR){
             
             if(language == "french"){
-              final <- substr(species[i,j], start=startFR + nchar("FRANCAIS"), stop=nchar(species[i,j]))
+              final <- substr(PF_species[i,j], start=startFR + nchar("FRANCAIS"), stop=nchar(PF_species[i,j]))
               
             }else{
               convert_res[step,"Result"] <- emo::ji("prohibited")
-              convert_res[step,"Message"] <- paste0("The summary was requested in English, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in English. Please enter the information in English, preceded by the text 'ENGLISH -'.")
+              convert_res[step,"Message"] <- paste0("The summary was requested in English, but information in the '", colnames(PF_species)[j], "' field (3. SPECIES tab) is not provided in English. Please enter the information in English, preceded by the text 'ENGLISH -'.")
               KBAforms[step] <- NA
               error <- T
               break
@@ -273,11 +245,11 @@ summary <- function(KBAforms, reviewStage, language, app){
           }else if(checkEN){
             
             if(language == "english"){
-              final <- substr(species[i,j], start=startEN + nchar("ENGLISH"), stop=nchar(species[i,j]))
+              final <- substr(PF_species[i,j], start=startEN + nchar("ENGLISH"), stop=nchar(PF_species[i,j]))
               
             }else{
               convert_res[step,"Result"] <- emo::ji("prohibited")
-              convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'.")
+              convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(PF_species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'.")
               KBAforms[step] <- NA
               error <- T
               break
@@ -301,13 +273,13 @@ summary <- function(KBAforms, reviewStage, language, app){
           final <- trimws(final, "both")
           
           # Assign to correct species entry
-          species[i,j] <- final
+          PF_species[i,j] <- final
           
         }else{
           
-          if(language=="french" & colnames(species)[j] %in% c("Composition of 10 RUs", "Explanation of site estimates", "Explanation of reference estimates") & !is.na(species[i,j])){
+          if(language=="french" & colnames(PF_species)[j] %in% c("Composition of 10 RUs", "Explanation of site estimates", "Explanation of reference estimates") & !is.na(PF_species[i,j])){
             convert_res[step,"Result"] <- emo::ji("prohibited")
-            convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'. Information in English should be preceded by 'ENGLISH -'.")
+            convert_res[step,"Message"] <- paste0("The summary was requested in French, but information in the '", colnames(PF_species)[j], "' field (3. SPECIES tab) is not provided in French. Please enter the information in French, preceded by the text 'FRANCAIS -'. Information in English should be preceded by 'ENGLISH -'.")
             KBAforms[step] <- NA
             error <- T
             break
@@ -325,10 +297,13 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
                 # Redact sensitive information
-    if((!formVersion %in% c(1, 1.1)) & (reviewStage == "general")){
+    PF_species %<>%
+      mutate(Sensitive = F)
+    
+    if(reviewStage == "general"){
       
       # Check that the Public Display section is filled out
-      if(sum(is.na(species$`Display taxonomic group?`), is.na(species$`Display taxon name?`), is.na(species$`Display assessment information?`), is.na(species$`Display internal boundary?`)) > 0){
+      if(sum(is.na(PF_species$display_taxonomicgroup), is.na(PF_species$display_taxonname), is.na(PF_species$display_assessmentinfo), is.na(PF_species$display_biodivelementdist)) > 0){
         convert_res[step,"Result"] <- emo::ji("prohibited")
         convert_res[step,"Message"] <- "You are requesting a summary for General Review and the Public Display section of the KBA Canada Proposal Form is not filled out. Please fill out this section before you proceed with General Review."
         KBAforms[step] <- NA
@@ -336,9 +311,9 @@ summary <- function(KBAforms, reviewStage, language, app){
         
       }else{
         
-        for(i in 1:nrow(species)){
+        for(i in 1:nrow(PF_species)){
           
-          alternativeName <- species$`Alternative name to display`[i] %>%
+          alternativeName <- PF_species$display_alternativename[i] %>%
             str_to_sentence()
           if(language == "english"){
             alternativeName <- ifelse(is.na(alternativeName) || alternativeName == "", "A sensitive taxon", alternativeName)
@@ -347,163 +322,71 @@ summary <- function(KBAforms, reviewStage, language, app){
           }
           
           # Display taxonomic group?
-          if(species$`Display taxonomic group?`[i] == "No"){
-            species$`Taxonomic group`[i] <- "-"
-            species$`Common name`[i] <- alternativeName
-            species$`Scientific name`[i] <- alternativeName
-            species$Sensitive[i] <- T
+          if(PF_species$display_taxonomicgroup[i] == "No"){
+            PF_species$`Taxonomic group`[i] <- "-"
+            PF_species$`Common name`[i] <- alternativeName
+            PF_species$`Scientific name`[i] <- alternativeName
+            PF_species$Sensitive[i] <- T
           }
           
           # Display taxon name?
-          if(species$`Display taxon name?`[i] == "No"){
-            species$`Common name`[i] <- alternativeName
-            species$`Scientific name`[i] <- alternativeName
-            species$Sensitive[i] <- T
+          if(PF_species$display_taxonname[i] == "No"){
+            PF_species$`Common name`[i] <- alternativeName
+            PF_species$`Scientific name`[i] <- alternativeName
+            PF_species$Sensitive[i] <- T
           }
           
           # Display assessment information?
-          if(species$`Display assessment information?`[i] == "No"){
-            species$Status[i] <- "-"
-            species$`Status assessment agency`[i] <- "-"
-            species$`Reproductive Units (RU)`[i] <- "-"
-            species$`Assessment parameter`[i] <- "(i) -"
-            species$`Min site estimate`[i] <- "-"
-            species$`Best site estimate`[i] <- "-"
-            species$`Max site estimate`[i] <- "-"
-            species$`Year of site estimate`[i] <- "-"
-            species$`Min reference estimate`[i] <- "-"
-            species$`Best reference estimate`[i] <- "-"
-            species$`Max reference estimate`[i] <- "-"
-            species$`Composition of 10 RUs`[i] <- "-"
-            species$`RU source`[i] <- "-"
-            species$`Derivation of best estimate`[i] <- "-"
-            species$`Explanation of site estimates`[i] <- "-"
-            species$`Sources of site estimates`[i] <- "-"
-            species$`Explanation of reference estimates`[i] <- "-"
-            species$`Sources of reference estimates`[i] <- "-"
-            species$Sensitive[i] <- T
+          if(PF_species$display_assessmentinfo[i] == "No"){
+            PF_species$Status[i] <- "-"
+            PF_species$`Status assessment agency`[i] <- "-"
+            PF_species$`Reproductive Units (RU)`[i] <- "-"
+            PF_species$`Assessment parameter`[i] <- "(i) -"
+            PF_species$`Min site estimate`[i] <- "-"
+            PF_species$`Best site estimate`[i] <- "-"
+            PF_species$`Max site estimate`[i] <- "-"
+            PF_species$`Year of site estimate`[i] <- "-"
+            PF_species$`Min reference estimate`[i] <- "-"
+            PF_species$`Best reference estimate`[i] <- "-"
+            PF_species$`Max reference estimate`[i] <- "-"
+            PF_species$`Composition of 10 RUs`[i] <- "-"
+            PF_species$`RU source`[i] <- "-"
+            PF_species$`Derivation of best estimate`[i] <- "-"
+            PF_species$`Explanation of site estimates`[i] <- "-"
+            PF_species$`Sources of site estimates`[i] <- "-"
+            PF_species$`Explanation of reference estimates`[i] <- "-"
+            PF_species$`Sources of reference estimates`[i] <- "-"
+            PF_species$Sensitive[i] <- T
           }
         }
       }
     }
     
                 # Sort by scientific name
-    species %<>% arrange(`Scientific name`)
+    PF_species %<>% arrange(`Scientific name`)
     
           # 4. ECOSYSTEMS & C
-    ecosystems %<>%
-      pull(X2) %>%
-      unique() %>%
-      .[which(!. == "Criteria met")]
-    
-    if(!length(ecosystems) == 0){
+    if(!nrow(PF_ecosystems) == 0){
       convert_res[step,"Result"] <- emo::ji("prohibited")
       convert_res[step,"Message"] <- "Ecosystem KBAs not yet supported. Please contact Chloé and provide her with this error message."
       KBAforms[step] <- NA
       next
     }
     
-          # 5. THREATS
-                # Verify whether "No Threats" checkbox is checked
-    noThreatsCol <- which(colnames(checkboxes) == "5..Threats")
-    
-    noThreats <- checkboxes[2, (noThreatsCol+1)] %>% as.logical()
-    
-                # If there are threats, get that information
-    if(!noThreats){
-      colnames(threats) <- threats[3,]
-      threats %<>% .[4:nrow(.),]
-      colnames(threats)[ncol(threats)] <- "Notes"
-    }  
-    
-          # 6. REVIEW
-                # General
-    review %<>%
-      drop_na(X2) %>%
-      fill(`INSTRUCTIONS:`)
-    
-                # Technical review
-    technicalReview <- review %>%
-      filter(`INSTRUCTIONS:` == 1) %>%
-      select(-`INSTRUCTIONS:`)
-    
-    colnames(technicalReview) <- technicalReview[2,]
-    
-    if(nrow(technicalReview) > 2){
-      technicalReview %<>% .[3:nrow(.),]
-    }else{
-      technicalReview[3,] <- c("No reviewers listed", "", "", "")
-      technicalReview %<>% .[3:nrow(.),]
-    }
-    
-                # General review
-    generalReview <- review %>%
-      filter(`INSTRUCTIONS:` == 2) %>%
-      select(-c(`INSTRUCTIONS:`))
-    
-    if(is.na(generalReview[2,4])){
-      generalReview %<>% select(-X5)
-    }
-    
-    colnames(generalReview) <- generalReview[2,]
-    
-    if(nrow(generalReview) > 2){
-      generalReview %<>% .[3:nrow(.),]
-    }else{
-      generalReview[3,] <- c("No reviewers listed", rep("", (ncol(generalReview)-1)))
-      generalReview %<>% .[3:nrow(.),]
-    }
-    
           # 7. CITATIONS
-                # General
-    colnames(citations) <- tolower(citations[2,])
-    citations %<>%
-      .[3:nrow(.), 1:4] %>%
-      filter(!is.na(`short citation`))
-    
                 # Redact sensitive citations
     if(reviewStage == "general"){
-      citations %<>% mutate(Sensitive = ifelse(grepl("SENSITIVE", citations$`short citation`, T), T, F)) %>%
-        filter(!Sensitive)
+      PF_citations %<>%
+        filter(!Sensitive == 1)
     }
-    
-          # 8. CHECK
-                # Column names
-    colnames(check) <- c("Check", "Item")
-    
-                # Get checkbox results
-    check_checkboxes <- checkboxes %>%
-      .[2:nrow(.),] %>%
-      select("8..Checks") %>%
-      drop_na()
-    
-    if(formVersion %in% c(1, 1.1)){
-      check_checkboxes %<>% .[c(1:5,7:nrow(.)),] # Cell N8 is obsolete in v1.1 of the Proposal Form (it doens't link to any actual checkbox)
-    }else{
-      check_checkboxes %<>% pull(`8..Checks`)
-    }
-    
-                # Verify that there are as many checkbox results as there are checkboxes
-    if(!(nrow(check) == length(check_checkboxes))){
-      convert_res[step,"Result"] <- emo::ji("prohibited")
-      convert_res[step,"Message"] <- "Inconsistencies between the 8. CHECKS tab and checkbox results. This error originates from the Excel formulas themselves. Please contact Chloé and provide her with this error message."
-      KBAforms[step] <- NA
-      next
-    }
-    
-                # Add checkbox results to the 8. CHECK tab
-    check %<>%
-      select(-Check) %>%
-      mutate(Check = check_checkboxes)
-    rm(check_checkboxes)
     
     # Prepare variables
           # 1. KBA Name
-    nationalName <<- site$GENERAL[which(site$Field == "National name")]
+    nationalName <<- PF_site$GENERAL[which(PF_site$Field == "National name")]
     
           # 2. Location
                 # Jurisdiction
-    juris <<- site$GENERAL[which(site$Field == "Province or Territory")]
+    juris <<- PF_site$GENERAL[which(PF_site$Field == "Province or Territory")]
     
     if(language == "french"){
       juris <<- xwalk_jurisdiction %>%
@@ -511,7 +394,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
                 # Latitude and Longitude
-    lat <<- site$GENERAL[which(site$Field == "Latitude (dd.dddd)")] %>%
+    lat <<- PF_site$GENERAL[which(PF_site$Field == "Latitude (dd.dddd)")] %>%
       as.numeric(.) %>%
       round(., 3)
     if(language == "english"){
@@ -520,13 +403,13 @@ summary <- function(KBAforms, reviewStage, language, app){
       lat <<- ifelse(is.na(lat), "coordonnées non spécifiées", lat)
     }
     
-    lon <<- site$GENERAL[which((site$Field == "Longitude (dd.dddd)" | site$Field == "Longitude (ddd.dddd)"))] %>%
+    lon <<- PF_site$GENERAL[which((PF_site$Field == "Longitude (dd.dddd)" | PF_site$Field == "Longitude (ddd.dddd)"))] %>%
       as.numeric(.) %>%
       round(., 3)
     lon <<- ifelse(is.na(lon), "", paste0("/", lon))
     
           # 3. KBA Scope
-    criteriaMet <- home$X4[which(home$X3 == "Criteria met")]
+    criteriaMet <- PF_home$X4[which(PF_home$X3 == "Criteria met")]
     if(language == "english"){
       scope <<- ifelse(grepl("g", criteriaMet, fixed=T) & grepl("n", criteriaMet, fixed=T),
                        "Global and National",
@@ -542,22 +425,18 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
           # 4. Proposal Development Lead
-    if(formVersion %in% c(1, 1.1)){
-      proposalLead <<- proposer$Entry[which(proposer$Field == "Name")]
-    }else{
-      proposalLead <<- proposer$Entry[which(proposer$Field == "Name of proposal development lead")]
-    }
+    proposalLead <<- PF_proposer$Entry[which(PF_proposer$Field == "Name of proposal development lead")]
     
-    if(!is.na(proposer$Entry[which(proposer$Field == "Names and affiliations")])){
+    if(!is.na(PF_proposer$Entry[which(PF_proposer$Field == "Names and affiliations")])){
       proposalLead <<- trimws(proposalLead) %>%
-        paste0(., ". Co-proposer(s): ", proposer$Entry[which(proposer$Field == "Names and affiliations")])
+        paste0(., ". Co-proposer(s): ", PF_proposer$Entry[which(PF_proposer$Field == "Names and affiliations")])
     }
     
           # 7. Site Description
     if(language == "english"){
-      siteDescription <<- site$GENERAL[which(site$Field == "Site description")]
+      siteDescription <<- PF_site$GENERAL[which(PF_site$Field == "Site description")]
     }else{
-      siteDescription <<- site$FRENCH[which(site$Field == "Site description")]
+      siteDescription <<- PF_site$FRENCH[which(PF_site$Field == "Site description")]
     }
     
           # 8. Assessment Details - KBA Trigger Species
@@ -571,47 +450,33 @@ summary <- function(KBAforms, reviewStage, language, app){
     
           # 10. Delineation Rationale
     if(language == "english"){
-      delineationRationale <<- site$GENERAL[which(site$Field == "Delineation rationale")]
+      delineationRationale <<- PF_site$GENERAL[which(PF_site$Field == "Delineation rationale")]
     }else{
-      delineationRationale <<- site$FRENCH[which(site$Field == "Delineation rationale")]
+      delineationRationale <<- PF_site$FRENCH[which(PF_site$Field == "Delineation rationale")]
     }
     
           # 12. General Review
-    noFeedback <- review$X3[which(review$X2 == "Provide information about any organizations you contacted and that did not provide feedback.")] %>%
-      ifelse(is.na(.), "None", .)
+    noFeedback <- PF_noReview
     
           # 13. Additional Site Information
     if(language == "english"){
-      nominationRationale <- site$GENERAL[which(site$Field == "Rationale for nomination")]
-      additionalBiodiversity <- site$GENERAL[which(site$Field == "Additional biodiversity")]
-      customaryJurisdiction <- site$GENERAL[which(site$Field == "Customary jurisdiction")]
+      nominationRationale <- PF_site$GENERAL[which(PF_site$Field == "Rationale for nomination")]
+      additionalBiodiversity <- PF_site$GENERAL[which(PF_site$Field == "Additional biodiversity")]
+      customaryJurisdiction <- PF_site$GENERAL[which(PF_site$Field == "Customary jurisdiction")]
     }else{
-      nominationRationale <- site$FRENCH[which(site$Field == "Rationale for nomination")]
-      additionalBiodiversity <- site$FRENCH[which(site$Field == "Additional biodiversity")]
-      customaryJurisdiction <- site$FRENCH[which(site$Field == "Customary jurisdiction")]
+      nominationRationale <- PF_site$FRENCH[which(PF_site$Field == "Rationale for nomination")]
+      additionalBiodiversity <- PF_site$FRENCH[which(PF_site$Field == "Additional biodiversity")]
+      customaryJurisdiction <- PF_site$FRENCH[which(PF_site$Field == "Customary jurisdiction")]
     }
     
-    if(formVersion %in% c(1, 1.1)){
-      
-      siteHistory <- NA
-      
-      if(language == "english"){
-        conservation <- site$GENERAL[which(site$Field == "Site management")]
-      }else{
-        conservation <- site$FRENCH[which(site$Field == "Site management")]
-      }
-      
+    if(language == "english"){
+      customaryJurisdictionSource <- PF_site$GENERAL[which(PF_site$Field == "Customary jurisdiction source")]
+      siteHistory <- PF_site$GENERAL[which(PF_site$Field == "Site history")]
+      conservation <- PF_site$GENERAL[which(PF_site$Field == "Conservation")]
     }else{
-      
-      if(language == "english"){
-        customaryJurisdictionSource <- site$GENERAL[which(site$Field == "Customary jurisdiction source")]
-        siteHistory <- site$GENERAL[which(site$Field == "Site history")]
-        conservation <- site$GENERAL[which(site$Field == "Conservation")]
-      }else{
-        customaryJurisdictionSource <- site$FRENCH[which(site$Field == "Customary jurisdiction source")]
-        siteHistory <- site$FRENCH[which(site$Field == "Site history")]
-        conservation <- site$FRENCH[which(site$Field == "Conservation")]
-      }
+      customaryJurisdictionSource <- PF_site$FRENCH[which(PF_site$Field == "Customary jurisdiction source")]
+      siteHistory <- PF_site$FRENCH[which(PF_site$Field == "Site history")]
+      conservation <- PF_site$FRENCH[which(PF_site$Field == "Conservation")]
     }
     
     # Prepare flextables
@@ -639,10 +504,10 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
                 # Number of species
-    maxCol <- max(sapply(species$`Criteria met`[which(!is.na(species$`Criteria met`))], function(x) str_count(x, ";")))+1
+    maxCol <- max(sapply(PF_species$`Criteria met`[which(!is.na(PF_species$`Criteria met`))], function(x) str_count(x, ";")))+1
     criteriaCols <- paste0("Col", 1:maxCol)
     
-    criteriaInfo <- species %>%
+    criteriaInfo <- PF_species %>%
       filter(!is.na(`Criteria met`)) %>%
       select(`Scientific name`, `Criteria met`) %>%
       separate(`Criteria met`, into=criteriaCols, sep="; ", fill="right") %>%
@@ -653,7 +518,7 @@ summary <- function(KBAforms, reviewStage, language, app){
       left_join(criteriaInfo, ., by=c("CriteriaFull" = "Criteria met"))
     
                 # Species names
-    criteriaInfo <- species %>%
+    criteriaInfo <- PF_species %>%
       filter(!is.na(`Criteria met`)) %>%
       select(`Scientific name`, `Criteria met`) %>%
       separate(`Criteria met`, into=criteriaCols, sep="; ", fill="right") %>%
@@ -686,7 +551,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     
           # Species assessments
                 # Get information
-    speciesAssessments <- species %>%
+    speciesAssessments <- PF_species %>%
       filter(!is.na(`Criteria met`)) %>%
       mutate_at(vars(`Reproductive Units (RU)`, `Min site estimate`, `Best site estimate`, `Max site estimate`, `Min reference estimate`, `Best reference estimate`, `Max reference estimate`), as.double) %>%
       mutate(PercentAtSite = ifelse(`Best site estimate` == "-", "-", round(100 * `Best site estimate`/`Best reference estimate`, 1))) %>%
@@ -1259,7 +1124,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
           # Trigger Elements summary
-    elementsSummary <- species %>%
+    elementsSummary <- PF_species %>%
       filter(!is.na(`Criteria met`)) %>%
       select(`Common name`, `Scientific name`) %>%
       unique() %>%
@@ -1380,7 +1245,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     
           # Technical Review
     if(reviewStage == "general"){
-      technicalReview_ft <- technicalReview %>%
+      technicalReview_ft <- PF_technicalReview %>%
         select(-`Description of role`) %>%
         flextable() %>%
         width(j=colnames(.), width=c(2.4,3.6,3)) %>%
@@ -1394,7 +1259,7 @@ summary <- function(KBAforms, reviewStage, language, app){
         hline_top(part="all")
       
     }else{
-      technicalReview_ft <- technicalReview %>%
+      technicalReview_ft <- PF_technicalReview %>%
         flextable() %>%
         width(j=colnames(.), width=c(1.4,2,2,3.6)) %>%
         align(align = "center", part="header") %>%
@@ -1408,13 +1273,13 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
           # General Review
-    if(ncol(generalReview) == 3){
+    if(ncol(PF_generalReview) == 3){
       widths <- c(2.4,3.6,3)
     }else{
       widths <- c(1.4,2,2,3.6)
     }
    
-    generalReview_ft <- generalReview %>%
+    generalReview_ft <- PF_generalReview %>%
       flextable() %>%
       width(j=colnames(.), width=widths) %>%
       align(align = "center", part="header") %>%
@@ -1460,7 +1325,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     
                 # Assessed elements that did not meet KBA criteria
     if(!reviewStage == "general"){
-      speciesNotTriggers <- species %>%
+      speciesNotTriggers <- PF_species %>%
         filter(is.na(`Criteria met`)) %>%
         pull(`Scientific name`) %>%
         unique() %>%
@@ -1488,7 +1353,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
                 # Customary jurisdiction source
-    if(!formVersion %in% c(1, 1.1)){
+    if(!PF_formVersion %in% c(1, 1.1)){
       
       if(language == "english"){
         additionalInfo[nrow(additionalInfo)+1, ] <- c("Source of customary jurisdiction information", ifelse(is.na(customaryJurisdictionSource), "-", customaryJurisdictionSource))
@@ -1501,7 +1366,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     additionalInfo[nrow(additionalInfo)+1, ] <- c("Conservation", ifelse(is.na(conservation), "-", conservation))
     
                 # Ongoing conservation actions
-    ongoingActions <- actions %>%
+    ongoingActions <- PF_actions %>%
       filter(Ongoing == "TRUE") %>%
       pull(Action) %>%
       lapply(., function(x) ifelse(x=="None", x, substr(x, start=5, stop=nchar(x)))) %>%
@@ -1524,8 +1389,8 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
                 # Ongoing threats
-    if(!noThreats){
-      threatText <- threats %>%
+    if(!PF_noThreats){
+      threatText <- PF_threats %>%
         pull(`Level 1`) %>%
         unique() %>%
         substr(., start=3, stop=nchar(.)) %>%
@@ -1553,7 +1418,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     
                 # Conservation actions needed
-    neededActions <- actions %>%
+    neededActions <- PF_actions %>%
       filter(Needed == "TRUE") %>%
       pull(Action) %>%
       lapply(., function(x) ifelse(x=="None", x, substr(x, start=5, stop=nchar(x)))) %>%
@@ -1592,13 +1457,13 @@ summary <- function(KBAforms, reviewStage, language, app){
       bold(j=1)
     
           # Citations
-    if(nrow(citations) == 0){
-      citations[1,] <- c("", "No references provided.", "", "")
+    if(nrow(PF_citations) == 0){
+      PF_citations[1,] <- c("", "No references provided.", "", "")
     }
     
-    citations_ft <- citations %>%
-      arrange(`long citation`) %>%
-      select(`long citation`) %>%
+    citations_ft <- PF_citations %>%
+      arrange(`Long citation`) %>%
+      select(`Long citation`) %>%
       flextable() %>%
       delete_part(part = "header") %>%
       width(j=colnames(.), width=9) %>%
@@ -1724,13 +1589,10 @@ summary <- function(KBAforms, reviewStage, language, app){
     if(success){
       convert_res[step,"Result"] <- emo::ji("check")
       
-      if(!formVersion %in% c(1, 1.1)){
+      for(i in 1:nrow(PF_species)){
         
-        for(i in 1:nrow(species)){
-          
-          if(((!is.na(species$`Display taxon name?`[i]) && (species$`Display taxon name?`[i] == "No")) | (!is.na(species$`Display taxonomic group?`[i]) && (species$`Display taxonomic group?`[i] == "No")) | (!is.na(species$`Display assessment information?`[i]) && (species$`Display assessment information?`[i] == "No"))) & (!reviewStage == "general")){
-            convert_res[step, "Message"] <- "WARNING: Contains unredacted sensitive information"
-          }
+        if(((!is.na(PF_species$display_taxonname[i]) && (PF_species$display_taxonname[i] == "No")) | (!is.na(PF_species$display_taxonomicgroup[i]) && (PF_species$display_taxonomicgroup[i] == "No")) | (!is.na(PF_species$display_assessmentinfo[i]) && (PF_species$display_assessmentinfo[i] == "No"))) & (!reviewStage == "general")){
+          convert_res[step, "Message"] <- "WARNING: Contains unredacted sensitive information"
         }
       }
     }
