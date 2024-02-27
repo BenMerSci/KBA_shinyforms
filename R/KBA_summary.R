@@ -3,8 +3,12 @@ summary <- function(KBAforms, reviewStage, language, app){
   # Options
   options(scipen = 999)
   
+  if(app){
+    incProgress(1/length(KBAforms), detail = "TEST")
+  }
+  
   # Load functions
-  source_url("https://github.com/chloedebyser/KBA-Public/blob/main/KBA%20Functions.R?raw=TRUE", local=TRUE)
+  source_url("https://github.com/chloedebyser/KBA-Public/blob/main/KBA%20Functions.R?raw=TRUE")
   
   # Load crosswalks
         # Assessment Paramter
