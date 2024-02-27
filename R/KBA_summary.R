@@ -98,12 +98,19 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
     rm(wb)
     
+    if(exists('read_KBACanadaProposalForm', mode='function')){
+      if(app){
+        incProgress(1/length(KBAforms), detail = "EXISTS")
+      }
+    }else{
+      if(app){
+        incProgress(1/length(KBAforms), detail = "DOES NOT EXIST")
+      }
+    }
+    Sys.sleep(30)
+    
     # Load KBA Canada Proposal Form
     read_KBACanadaProposalForm(formPath = KBAforms[step], final = ifelse(reviewStage == "steering", T, F))
-    
-    if(app){
-      incProgress(1/length(KBAforms), detail = "TEST")
-    }
     
     # Handle the site name
           # Get the name
