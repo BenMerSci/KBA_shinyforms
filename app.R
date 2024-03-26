@@ -103,7 +103,6 @@ ui <- fluidPage(
 
         hr(),
         br(),
-        br(),
 
           tags$div(uiOutput("runButton"), align = "center"),
       )
