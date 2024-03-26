@@ -104,8 +104,6 @@ ui <- fluidPage(
         hr(),
         br(),
         br(),
-        br(),
-        br(),
 
           tags$div(uiOutput("runButton"), align = "center"),
       )
@@ -175,11 +173,16 @@ shinyjs::hide("downloadData")
   r <- reactiveValues(convertRes = NULL)
 
   observeEvent(input$runScript, {
+    
     shinyjs::disable("runScript")
+    shinyjs::hide("downloadData")
+    shinyjs::hide("resTable")
+    
     r$convertRes <- form_conversion(KBAforms = file_df()$datapath, reviewStage = getReviewStage(), language = getLanguage(), app = T)
 
     output$resTable <- renderTable(r$convertRes[[2]])
-
+    shinyjs::show("resTable")
+    
     output$downloadData <- downloadHandler(
       filename = function() if(length(file_df()$name) == 1){
         r$convertRes[[1]]
