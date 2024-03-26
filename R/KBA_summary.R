@@ -71,8 +71,13 @@ summary <- function(KBAforms, reviewStage, language, app){
   convert_res <- data.frame(matrix(ncol=3))
   colnames(convert_res) <- c("Name","Result","Message")
   
+  # Get list of variables to retain
+  toRetain <- ls()
+  
   #### Prepare the Summary(ies) ####
   for(step in 1:length(KBAforms)){
+    
+    rm(list=setdiff(ls(), c(toRetain, "step", "toRetain")))
     
     if(!grepl(".xlsm", KBAforms[step], fixed =  TRUE)){
       convert_res[step,"Result"] <- emo::ji("prohibited")
