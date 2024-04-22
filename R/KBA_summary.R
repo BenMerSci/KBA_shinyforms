@@ -240,7 +240,7 @@ summary <- function(KBAforms, reviewStage, language, app){
               
             }else if(checkFR){
               
-              if(language == "french"){
+              if((language == "french") | (reviewStage == "steering")){
                 final <- substr(PF_species[i,j], start=startFR + nchar("FRANCAIS"), stop=nchar(PF_species[i,j]))
                 
               }else{
