@@ -201,7 +201,9 @@ summary <- function(KBAforms, reviewStage, language, app){
         
         for(j in 1:ncol(PF_species)){
           
-          PF_species[i,j] <- gsub("FRANÇAIS", "FRANCAIS", PF_species[i,j])
+          PF_species[i,j] <- gsub("FRANÇAIS -", "FRANCAIS -", PF_species[i,j])
+          PF_species[i,j] <- gsub("Français -", "FRANCAIS -", PF_species[i,j])
+          PF_species[i,j] <- gsub("français -", "FRANCAIS -", PF_species[i,j])
           
           if(grepl("FRANCAIS", PF_species[i,j]) | grepl("ENGLISH", PF_species[i,j])){
             
