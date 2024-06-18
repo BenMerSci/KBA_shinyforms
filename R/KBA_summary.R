@@ -2325,7 +2325,7 @@ summary <- function(KBAforms, reviewStage, language, app){
     
           # Citations
     if(nrow(PF_citations) == 0){
-      PF_citations[1,] <- c("", "No references provided.", "", "")
+      PF_citations[1,] <- c("", "No references provided.", "", "", "")
     }
     
     citations_ft <- PF_citations %>%
