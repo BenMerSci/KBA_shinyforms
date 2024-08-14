@@ -2395,24 +2395,16 @@ summary <- function(KBAforms, reviewStage, language, app){
     }
    
     # Compute document name
+    reviewStageLabel <- ifelse(reviewStage == "technical",
+                               "TR",
+                               ifelse(reviewStage == "general",
+                                      "GR",
+                                      "SC"))
+    
     if(language == "english"){
-      
-      reviewStageLabel <- ifelse(reviewStage == "technical",
-                                 "TechnicalReview",
-                                 ifelse(reviewStage == "general",
-                                        "GeneralReview",
-                                        "SteeringCommittee"))
-      
       doc <- paste0("KBASummary_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
       
     }else{
-      
-      reviewStageLabel <- ifelse(reviewStage == "technical",
-                                 "RévisionTechnique",
-                                 ifelse(reviewStage == "general",
-                                        "RévisionGénérale",
-                                        "ComitéDeGestion"))
-      
       doc <- paste0("SommaireKBA_", reviewStageLabel, "_", str_replace_all(string=nationalName, pattern=c(":| |\\(|\\)|/"), repl=""), "_", Sys.Date(), ".docx")
     }
     
