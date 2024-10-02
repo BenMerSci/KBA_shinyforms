@@ -760,20 +760,18 @@ summary <- function(KBAforms, reviewStage, language, app){
         group_by(`Criteria met`) %>%
         summarise(NTriggers = n(), .groups="drop") %>%
         left_join(criteriaInfo, ., by=c("CriteriaFull" = "Criteria met")) %>%
-        filter(!is.na(NTriggers))
+        filter(!is.na(NTriggers)) %>%
+        mutate(Type = "Species")
       
                       # Species names
-      criteriaInfoSpp <- PF_species %>%
+      criteriaInfoSpp_names <- PF_species %>%
         filter(!is.na(`Criteria met`)) %>%
-        select(`Scientific name`, `Criteria met`) %>%
+        select(`Common name`, `Scientific name`, `Criteria met`) %>%
         separate(`Criteria met`, into=criteriaColsSpp, sep="; ", fill="right") %>%
         pivot_longer(all_of(criteriaColsSpp), names_to = "Remove", values_to="Criteria met") %>%
         filter(!is.na(`Criteria met`)) %>%
-        arrange(`Scientific name`) %>%
-        group_by(`Criteria met`) %>%
-        summarise(triggerNames = paste(`Scientific name`, collapse=", "), .groups="drop") %>%
-        left_join(criteriaInfoSpp, ., by=c("CriteriaFull" = "Criteria met")) %>%
-        mutate(Type = "Species")
+        arrange(`Criteria met`, `Scientific name`) %>%
+        select(-Remove)
     }
     
                 # Ecosystem criteria
@@ -828,10 +826,40 @@ summary <- function(KBAforms, reviewStage, language, app){
     
     for(row in 1:nrow(criteriaInfo)){
       
-      if(language == "english"){
-        criteriaInfo_ft %<>% compose(i=row, j='Label', value=as_paragraph(as_chunk(x=paste0(as.character("\u25CF"), " ", criteriaInfo$Scope[row], " ", criteriaInfo$Criteria[row], " [criterion met by ", criteriaInfo$NTriggers[row], ifelse(criteriaInfo$Type[row] == "Species", ifelse(criteriaInfo$NTriggers[row] == 1, " taxon]", " taxa]"), ifelse(criteriaInfo$NTriggers[row] == 1, " ecosystem type]", " ecosystem types]")), " - ", criteriaInfo$Definition[row], " (")), as_chunk(x=criteriaInfo$triggerNames[row], props=fp_text(font.size=11, font.family='Calibri', italic=ifelse(criteriaInfo$Type[row]=="Ecosystem", F, T))), as_chunk(x=").")))
+      criterion <- criteriaInfo$CriteriaFull[row]
+      type <- criteriaInfo$Type[row]
+      
+      if(type == "Species"){
+        
+        speciesNames <- criteriaInfoSpp_names %>%
+          filter(`Criteria met` == criterion) %>%
+          select(-`Criteria met`)
+                 
+        speciesNames_call <- ""
+        
+        for(sp in 1:nrow(speciesNames)){
+          
+          speciesNames_call <- paste0(speciesNames_call, ", as_chunk(x='", speciesNames$`Common name`[sp], " ('), as_chunk(x='", speciesNames$`Scientific name`[sp], "', props=fp_text(font.size=11, font.family='Calibri', italic=T)), as_chunk(x='), ')")
+        }
+        rm(sp)
+        
+        speciesNames_call <- substr(speciesNames_call, start=3, stop=nchar(speciesNames_call)-4) %>%
+          paste0(., "')")
+        
+        if(language == "english"){
+          compose_call <- paste0("criteriaInfo_ft %<>% compose(i=row, j='Label', value=as_paragraph(as_chunk(x=paste0(as.character('\u25CF'), ' ', criteriaInfo$Scope[row], ' ', criteriaInfo$Criteria[row], ' - ', criteriaInfo$Definition[row], ' [criterion met by ', criteriaInfo$NTriggers[row], ifelse(criteriaInfo$NTriggers[row] == 1, ' taxon: ', ' taxa: '))), ", speciesNames_call, ", as_chunk(x='].')))")
+        }else{
+          compose_call <- paste0("criteriaInfo_ft %<>% compose(i=row, j='Label', value=as_paragraph(as_chunk(x=paste0(as.character('\u25CF'), ' ', criteriaInfo$Scope[row], ' ', criteriaInfo$Criteria[row], ' - ', criteriaInfo$Definition[row], ' [critère rempli par ', criteriaInfo$NTriggers[row], ifelse(criteriaInfo$NTriggers[row] == 1, ' taxon : ', ' taxons : '))), ", speciesNames_call, ", as_chunk(x='].')))")
+        }
+        eval(parse(text=compose_call))
+        
       }else{
-        criteriaInfo_ft %<>% compose(i=row, j='Label', value=as_paragraph(as_chunk(x=paste0(as.character("\u25CF"), " ", criteriaInfo$Scope[row], " ", criteriaInfo$Criteria[row], " [critère rempli par ", criteriaInfo$NTriggers[row], ifelse(criteriaInfo$Type[row] == "Species", ifelse(criteriaInfo$NTriggers[row] == 1, " taxon]", " taxons]"), ifelse(criteriaInfo$NTriggers[row] == 1, " type d'écosystème]", " types d'écosystèmes]")), " - ", criteriaInfo$Definition[row], " (")), as_chunk(x=criteriaInfo$triggerNames[row], props=fp_text(font.size=11, font.family='Calibri', italic=ifelse(criteriaInfo$Type[row]=="Ecosystem", F, T))), as_chunk(x=").")))
+        
+        if(language == "english"){
+          criteriaInfo_ft %<>% compose(i=row, j='Label', value=as_paragraph(as_chunk(x=paste0(as.character("\u25CF"), " ", criteriaInfo$Scope[row], " ", criteriaInfo$Criteria[row], " - ", criteriaInfo$Definition[row], " [criterion met by ", criteriaInfo$NTriggers[row], ifelse(criteriaInfo$NTriggers[row] == 1, " ecosystem type: ", " ecosystem types: "))), as_chunk(x=criteriaInfo$triggerNames[row], props=fp_text(font.size=11, font.family='Calibri', italic=F)), as_chunk(x="].")))
+        }else{
+          criteriaInfo_ft %<>% compose(i=row, j='Label', value=as_paragraph(as_chunk(x=paste0(as.character("\u25CF"), " ", criteriaInfo$Scope[row], " ", criteriaInfo$Criteria[row], " - ", criteriaInfo$Definition[row], " [critère rempli par ", criteriaInfo$NTriggers[row], ifelse(criteriaInfo$NTriggers[row] == 1, " type d'écosystème : ", " types d'écosystèmes : "))), as_chunk(x=criteriaInfo$triggerNames[row], props=fp_text(font.size=11, font.family='Calibri', italic=F)), as_chunk(x="].")))
+        }
       }
     }
     
