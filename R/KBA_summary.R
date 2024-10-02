@@ -902,16 +902,9 @@ summary <- function(KBAforms, reviewStage, language, app){
       
       speciesAssessments %<>%
         mutate(AssessmentParameter = ifelse(AssessmentParameter %in% c("Area of occupancy", "Zone d'occupation", "Extent of suitable habitat", "Étendue de l'habitat approprié", "Range", "Aire de répartition"), paste(AssessmentParameter, "(km2)"), AssessmentParameter)) %>%
-        select(`Scientific name`, `Common name`, `Taxonomic group`, Status, `Criteria met`, `Description of evidence`, `Reproductive Units (RU)`, `Composition of 10 RUs`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite, Sensitive)
+        mutate(`Name` = paste0(`Common name`, " (", `Scientific name`, ")")) %>%
+        select(Name, Status, `Criteria met`, `Description of evidence`, `Reproductive Units (RU)`, `Composition of 10 RUs`, `RU source`, AssessmentParameter, Blank, SiteEstimate_Min, SiteEstimate_Best, SiteEstimate_Max, `Year of site estimate`, `Derivation of best estimate`, `Explanation of site estimates`, `Sources of site estimates`, TotalEstimate_Min, TotalEstimate_Best, TotalEstimate_Max, `Explanation of reference estimates`, `Sources of reference estimates`, PercentAtSite, Sensitive)
       
-                # If general review, then use common name instead of the scientific name for birds
-      if(reviewStage == "general"){
-  
-        speciesAssessments %<>%
-          mutate(`Scientific name` = ifelse(is.na(`Taxonomic group`), `Scientific name`, ifelse((`Taxonomic group` == "Aves (birds)") & (!is.na(`Common name`)), `Common name`, `Scientific name`)))
-      }
-      speciesAssessments %<>% select(-c(`Common name`, `Taxonomic group`))
-  
                 # Separate global and national assessments
       speciesAssessments_g <- speciesAssessments %>%
         filter(grepl("g", `Criteria met`, fixed=T)) %>%
@@ -1043,12 +1036,12 @@ summary <- function(KBAforms, reviewStage, language, app){
           if(language == "english"){
             speciesAssessments_g_ft %<>%
               width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'Global Estimate', PercentAtSite = "% of Global Pop. at Site")) %>%
+              set_header_labels(values=list(`Name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'Global Estimate', PercentAtSite = "% of Global Pop. at Site")) %>%
               add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", 'Global Estimate', "% of Global Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
           }else{
             speciesAssessments_g_ft %<>%
               width(j=colnames(.), width=c(1.3,1.1,0.85,1.3,1.3,0.05,0.7,0.7,0.9,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Espèce", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reproductives", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Best = "Valeur", `Year of site estimate` = "Année", TotalEstimate_Best = 'Estimation mondiale', PercentAtSite = "% de la pop. mondiale au site")) %>%
+              set_header_labels(values=list(`Name` = "Espèce", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reproductives", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Best = "Valeur", `Year of site estimate` = "Année", TotalEstimate_Best = 'Estimation mondiale', PercentAtSite = "% de la pop. mondiale au site")) %>%
               add_header_row(values = c("Espèce", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reproductives", "Paramètre d’évaluation", "", "Estimation au site", "Estimation mondiale", "% de la pop. mondiale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
           }
           
@@ -1060,7 +1053,6 @@ summary <- function(KBAforms, reviewStage, language, app){
             merge_v(part = "header") %>%
             font(fontname="Calibri", part="body") %>%
             fontsize(size=11, part='body') %>%
-            italic(j=1, part='body') %>%
             hline_top(part="all") %>%
             border_remove() %>%
             hline(border = fp_border(width = 1), part="header") %>%
@@ -1079,12 +1071,12 @@ summary <- function(KBAforms, reviewStage, language, app){
           if(language == "english"){
             speciesAssessments_g_ft %<>%
               width(j=colnames(.), width=c(1.05,0.8,0.65,0.9,0.9,0.05,0.55,0.55,0.55,0.55,0.05,0.55,0.55,0.55,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of Global Pop. at Site")) %>%
+              set_header_labels(values=list(`Name` = "Species", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of Global Pop. at Site")) %>%
               add_header_row(values = c("Species", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "Global Estimate", "% of Global Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
           }else{
             speciesAssessments_g_ft %<>%
               width(j=colnames(.), width=c(1.1,0.8,0.85,1.1,0.95,0.05,0.45,0.5,0.45,0.55,0.05,0.45,0.5,0.45,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Espèce", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reprod.", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Meilleure", SiteEstimate_Max = "Max", `Year of site estimate` = "Année", TotalEstimate_Min = "Min", TotalEstimate_Best = 'Meilleure', TotalEstimate_Max = "Max", PercentAtSite = "% de la pop. mondiale au site")) %>%
+              set_header_labels(values=list(`Name` = "Espèce", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reprod.", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Meilleure", SiteEstimate_Max = "Max", `Year of site estimate` = "Année", TotalEstimate_Min = "Min", TotalEstimate_Best = 'Meilleure', TotalEstimate_Max = "Max", PercentAtSite = "% de la pop. mondiale au site")) %>%
               add_header_row(values = c("Espèce", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reprod.", "Paramètre d’évaluation", "", "Estimation au site", "", "Estimation mondiale", "% de la pop. mondiale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
           }
           
@@ -1096,7 +1088,6 @@ summary <- function(KBAforms, reviewStage, language, app){
             merge_v(part = "header") %>%
             font(fontname="Calibri", part="body") %>%
             fontsize(size=11, part='body') %>%
-            italic(j=1, part='body') %>%
             hline_top(part="all") %>%
             border_remove() %>%
             hline(border = fp_border(width = 1), part="header") %>%
@@ -1119,12 +1110,12 @@ summary <- function(KBAforms, reviewStage, language, app){
           if(language == "english"){
             speciesAssessments_n_ft %<>%
               width(j=colnames(.), width=c(1.5,1.3,0.65,1.3,1.3,0.05,0.7,0.7,0.7,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'National Estimate', PercentAtSite = "% of National Pop. at Site")) %>%
+              set_header_labels(values=list(`Name` = "Taxon", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Best = "Value", `Year of site estimate` = "Year", TotalEstimate_Best = 'National Estimate', PercentAtSite = "% of National Pop. at Site")) %>%
               add_header_row(values = c("Taxon", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", 'National Estimate', "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
           }else{
             speciesAssessments_n_ft %<>%
               width(j=colnames(.), width=c(1.3,1.1,0.85,1.3,1.3,0.05,0.7,0.7,0.9,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reproductives", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Best = "Valeur", `Year of site estimate` = "Année", TotalEstimate_Best = 'Estimation nationale', PercentAtSite = "% de la pop. nationale au site")) %>%
+              set_header_labels(values=list(`Name` = "Taxon", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reproductives", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Best = "Valeur", `Year of site estimate` = "Année", TotalEstimate_Best = 'Estimation nationale', PercentAtSite = "% de la pop. nationale au site")) %>%
               add_header_row(values = c("Taxon", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reproductives", "Paramètre d’évaluation", "", "Estimation au site", "Estimation nationale", "% de la pop. nationale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 2, 1, 1))
           }
           
@@ -1136,7 +1127,6 @@ summary <- function(KBAforms, reviewStage, language, app){
             merge_v(part = "header") %>%
             font(fontname="Calibri", part="body") %>%
             fontsize(size=11, part='body') %>%
-            italic(j=1, part='body') %>%
             hline_top(part="all") %>%
             border_remove() %>%
             hline(border = fp_border(width = 1), part="header") %>%
@@ -1155,12 +1145,12 @@ summary <- function(KBAforms, reviewStage, language, app){
           if(language == "english"){
             speciesAssessments_n_ft %<>%
               width(j=colnames(.), width=c(1.05,0.8,0.65,0.9,0.9,0.05,0.55,0.55,0.55,0.55,0.05,0.55,0.55,0.55,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of National Pop. at Site")) %>%
+              set_header_labels(values=list(`Name` = "Taxon", Status = "Status*", `Criteria met`="Criteria Met", `Reproductive Units (RU)` = "# of Reproductive Units", AssessmentParameter = 'Assessment Parameter', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Best", SiteEstimate_Max = "Max", SiteEstimate_Year = "Year", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = "Best", TotalEstimate_Max = "Max", PercentAtSite = "% of National Pop. at Site")) %>%
               add_header_row(values = c("Taxon", "Status*", "Criteria Met", "# of Reproductive Units", "Assessment Parameter", "", "Site Estimate", "", "National Estimate", "% of National Pop. at Site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
           }else{
             speciesAssessments_n_ft %<>%
               width(j=colnames(.), width=c(1.1,0.8,0.85,1.1,0.95,0.05,0.45,0.5,0.45,0.55,0.05,0.45,0.5,0.45,0.8)) %>%
-              set_header_labels(values=list(`Scientific name` = "Taxon", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reprod.", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Meilleure", SiteEstimate_Max = "Max", `Year of site estimate` = "Année", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = 'Meilleure', TotalEstimate_Max = "Max", PercentAtSite = "% de la pop. nationale au site")) %>%
+              set_header_labels(values=list(`Name` = "Taxon", Status = "Statut*", `Criteria met`="Critère(s) atteint(s)", `Reproductive Units (RU)` = "# d’Unités Reprod.", AssessmentParameter = 'Paramètre d’évaluation', Blank='', SiteEstimate_Min = "Min", SiteEstimate_Best = "Meilleure", SiteEstimate_Max = "Max", `Year of site estimate` = "Année", Blank2 = "", TotalEstimate_Min = "Min", TotalEstimate_Best = 'Meilleure', TotalEstimate_Max = "Max", PercentAtSite = "% de la pop. nationale au site")) %>%
               add_header_row(values = c("Taxon", "Statut*", "Critère(s) atteint(s)", "# d’Unités Reprod.", "Paramètre d’évaluation", "", "Estimation au site", "", "Estimation nationale", "% de la pop. nationale au site"), colwidths=c(1, 1, 1, 1, 1, 1, 4, 1, 3, 1))
           }
           
@@ -1172,7 +1162,6 @@ summary <- function(KBAforms, reviewStage, language, app){
             merge_v(part = "header") %>%
             font(fontname="Calibri", part="body") %>%
             fontsize(size=11, part='body') %>%
-            italic(j=1, part='body') %>%
             hline_top(part="all") %>%
             border_remove() %>%
             hline(border = fp_border(width = 1), part="header") %>%
