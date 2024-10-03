@@ -939,6 +939,7 @@ summary <- function(KBAforms, reviewStage, language, app){
         footnotesSpecies_g %<>%
           mutate(RU_Source = paste0(ifelse(!is.na(`Composition of 10 RUs`), paste0("Composition of 10 Reproductive Units (RUs): ", `Composition of 10 RUs`), ""), ifelse(!is.na(`Description of evidence`), paste0(" Description of evidence: ", `Description of evidence`), ""), ifelse(!is.na(`RU source`), paste0(" Source of RU data: ", `RU source`), ""))) %>%
           mutate(RU_Source = ifelse(RU_Source == "", NA, RU_Source)) %>%
+          mutate(RU_Source = trimws(RU_Source)) %>%
           mutate(Site_Source = paste0(ifelse(!is.na(`Derivation of best estimate`), paste0("Derivation of site estimate: ", `Derivation of best estimate`), ""), ifelse(!is.na(`Explanation of site estimates`), paste0(" Explanation of site estimate(s): ", `Explanation of site estimates`), ""), ifelse(!is.na(`Sources of site estimates`), paste0(" Source(s) of site estimate(s): ", `Sources of site estimates`), ""))) %>%
           mutate(Site_Source = ifelse(Site_Source == "", NA, Site_Source)) %>%
           mutate(Reference_Source = paste0(ifelse(!is.na(`Explanation of reference estimates`), paste0("Explanation of global estimate(s): ", `Explanation of reference estimates`), ""), ifelse(!is.na(`Sources of reference estimates`), paste0(" Source(s) of global estimate(s): ", `Sources of reference estimates`), ""))) %>%
