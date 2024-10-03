@@ -833,7 +833,8 @@ summary <- function(KBAforms, reviewStage, language, app){
         
         speciesNames <- criteriaInfoSpp_names %>%
           filter(`Criteria met` == criterion) %>%
-          select(-`Criteria met`)
+          select(-`Criteria met`) %>%
+          mutate(`Common name` = gsub("'", "\\'", `Common name`, fixed=T))
                  
         speciesNames_call <- ""
         
