@@ -1312,8 +1312,10 @@ summary <- function(KBAforms, reviewStage, language, app){
                 if(c %in% col){
                   urls <- str_locate_all(string, "http")[[1]][,1]
                   urlIDs <- paste0("url", urls)
-                  spaces <- str_locate_all(string, " ")[[1]][,1] %>%
-                    ifelse(length(.) == 0, -1, .)
+                  spaces <- str_locate_all(string, " ")[[1]][,1]
+                  if(length(spaces) == 0){
+                    spaces <- -1
+                  }
                   links <- list()
                   
                   for(u in 1:length(urls)){
@@ -1684,8 +1686,10 @@ summary <- function(KBAforms, reviewStage, language, app){
               if(c %in% col){
                 urls <- str_locate_all(string, "http")[[1]][,1]
                 urlIDs <- paste0("url", urls)
-                spaces <- str_locate_all(string, " ")[[1]][,1] %>%
-                  ifelse(length(.) == 0, -1, .)
+                spaces <- str_locate_all(string, " ")[[1]][,1]
+                if(length(spaces) == 0){
+                  spaces <- -1
+                }
                 links <- list()
                 
                 for(u in 1:length(urls)){
@@ -1780,8 +1784,10 @@ summary <- function(KBAforms, reviewStage, language, app){
               if(c %in% col){
                 urls <- str_locate_all(string, "http")[[1]][,1]
                 urlIDs <- paste0("url", urls)
-                spaces <- str_locate_all(string, " ")[[1]][,1] %>%
-                  ifelse(length(.) == 0, -1, .)
+                spaces <- str_locate_all(string, " ")[[1]][,1]
+                if(length(spaces) == 0){
+                  spaces <- -1
+                }
                 links <- list()
                 
                 for(u in 1:length(urls)){
