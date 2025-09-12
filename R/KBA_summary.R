@@ -1183,7 +1183,7 @@ summary <- function(KBAforms, reviewStage, language, app){
           for(row in seq(2, nrow(speciesAssessments_n), 2)){
             
             speciesAssessments_n_ft %<>%
-              merge_at(i=row, j=1:11) %>%
+              merge_at(i=row, j=1:10) %>%
               bg(i=row, bg = "#EFEFEF", part = "body") %>%
               bold(i=row-1, j=1, bold=T, part="body")
           }
@@ -1321,13 +1321,37 @@ summary <- function(KBAforms, reviewStage, language, app){
       rm(ecosystemAssessments)
       
                 # Information for the footnotes
-      footnotesEcosystems_g <- ecosystemAssessments_g %>%
-        select(`Ecosystem level justification`) %>%
-        mutate(`Ecosystem level justification` = sapply(`Ecosystem level justification`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))
+      if(language == "english"){
+        
+        footnotesEcosystems_g <- ecosystemAssessments_g %>%
+          mutate(`Ecosystem level justification` = trimws(`Ecosystem level justification`)) %>%
+          mutate(Footnote = paste0("ECOSYSTEM LEVEL JUSTIFICATION\n", sapply(`Ecosystem level justification`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))) %>%
+          pull(Footnote)
+        
+      }else{
+        
+        footnotesEcosystems_g <- ecosystemAssessments_g %>%
+          mutate(`Ecosystem level justification` = trimws(`Ecosystem level justification`)) %>%
+          mutate(Footnote = paste0("JUSTIFICATION DU NIVEAU DE L'ÉCOSYSTÈME\n", sapply(`Ecosystem level justification`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))) %>%
+          pull(Footnote)
+        
+      }
       
-      footnotesEcosystems_n <- ecosystemAssessments_n %>%
-        select(`Ecosystem level justification`) %>%
-        mutate(`Ecosystem level justification` = sapply(`Ecosystem level justification`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))
+      if(language == "english"){
+        
+        footnotesEcosystems_n <- ecosystemAssessments_n %>%
+          mutate(`Ecosystem level justification` = trimws(`Ecosystem level justification`)) %>%
+          mutate(Footnote = paste0("ECOSYSTEM LEVEL JUSTIFICATION\n", sapply(`Ecosystem level justification`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))) %>%
+          pull(Footnote)
+        
+      }else{
+        
+        footnotesEcosystems_n <- ecosystemAssessments_n %>%
+          mutate(`Ecosystem level justification` = trimws(`Ecosystem level justification`)) %>%
+          mutate(Footnote = paste0("JUSTIFICATION DU NIVEAU DE L'ÉCOSYSTÈME\n", sapply(`Ecosystem level justification`, function(x) ifelse(substr(x, start=nchar(x), stop=nchar(x)) == ".", x, paste0(x, "."))))) %>%
+          pull(Footnote)
+        
+      }
       
                 # Information for the main table
       ecosystemAssessments_g %<>% select(-c(`Ecosystem level justification`))
@@ -1363,6 +1387,14 @@ summary <- function(KBAforms, reviewStage, language, app){
                 # Format flextables
                       # Ecosystem assessment - Global
       if(nrow(ecosystemAssessments_g) > 0){
+        
+        ecosystemAssessments_g %<>%
+          mutate(row = seq(1, nrow(.)*2, 2)) %>%
+          add_row(`Name of ecosystem type` = footnotesEcosystems_g,
+                  row = seq(2, nrow(.)*2, 2)) %>%
+          arrange(row) %>%
+          select(-row)
+        
         if(bestOnly_g){
           ecosystemAssessments_g_ft <- ecosystemAssessments_g %>%
             flextable()
@@ -1392,6 +1424,15 @@ summary <- function(KBAforms, reviewStage, language, app){
             hline_bottom(border = fp_border(width = 2), part="header") %>%
             hline_bottom(border=fp_border(width=1), part='body') %>%
             align(j=c(2,3,4,5,6,7,8,9), align = "center", part = "body")
+          
+          for(row in seq(2, nrow(ecosystemAssessments_g), 2)){
+            
+            ecosystemAssessments_g_ft %<>%
+              merge_at(i=row, j=1:9) %>%
+              bg(i=row, bg = "#EFEFEF", part = "body") %>%
+              bold(i=row-1, j=1, bold=T, part="body")
+          }
+          
           
         }else{
           ecosystemAssessments_g_ft <- ecosystemAssessments_g %>%
@@ -1426,13 +1467,30 @@ summary <- function(KBAforms, reviewStage, language, app){
             hline_bottom(border = fp_border(width = 2), part="header") %>%
             hline_bottom(border=fp_border(width=1), part='body') %>%
             align(j=c(2,3,4,5,6,7,8,9,10,11,12), align = "center", part = "body")
+          
+          for(row in seq(2, nrow(ecosystemAssessments_g), 2)){
+            
+            ecosystemAssessments_g_ft %<>%
+              merge_at(i=row, j=1:12) %>%
+              bg(i=row, bg = "#EFEFEF", part = "body") %>%
+              bold(i=row-1, j=1, bold=T, part="body")
+          }
         }
+        
       }else{
         ecosystemAssessments_g_ft <- ""
       }
       
                       # Ecosystem assessment - National
       if(nrow(ecosystemAssessments_n) > 0){
+        
+        ecosystemAssessments_n %<>%
+          mutate(row = seq(1, nrow(.)*2, 2)) %>%
+          add_row(`Name of ecosystem type` = footnotesEcosystems_n,
+                  row = seq(2, nrow(.)*2, 2)) %>%
+          arrange(row) %>%
+          select(-row)
+        
         if(bestOnly_n){
           ecosystemAssessments_n_ft <- ecosystemAssessments_n %>%
             flextable()
@@ -1462,6 +1520,14 @@ summary <- function(KBAforms, reviewStage, language, app){
             hline_bottom(border = fp_border(width = 2), part="header") %>%
             hline_bottom(border=fp_border(width=1), part='body') %>%
             align(j=c(2,3,4,5,6,7,8,9), align = "center", part = "body")
+          
+          for(row in seq(2, nrow(ecosystemAssessments_n), 2)){
+            
+            ecosystemAssessments_n_ft %<>%
+              merge_at(i=row, j=1:9) %>%
+              bg(i=row, bg = "#EFEFEF", part = "body") %>%
+              bold(i=row-1, j=1, bold=T, part="body")
+          }
           
         }else{
           ecosystemAssessments_n_ft <- ecosystemAssessments_n %>%
@@ -1496,207 +1562,18 @@ summary <- function(KBAforms, reviewStage, language, app){
             hline_bottom(border = fp_border(width = 2), part="header") %>%
             hline_bottom(border=fp_border(width=1), part='body') %>%
             align(j=c(2,3,4,5,6,7,8,9,10,11,12), align = "center", part = "body")
+          
+          for(row in seq(2, nrow(ecosystemAssessments_n), 2)){
+            
+            ecosystemAssessments_n_ft %<>%
+              merge_at(i=row, j=1:12) %>%
+              bg(i=row, bg = "#EFEFEF", part = "body") %>%
+              bold(i=row-1, j=1, bold=T, part="body")
+          }
         }
+        
       }else{
         ecosystemAssessments_n_ft <- ""
-      }
-      
-                       # Add footnotes, with formatted hyperlinks
-                            # Global
-      if(nrow(ecosystemAssessments_g) > 0){
-        footnote <- 0
-        
-        for(i in 1:nrow(ecosystemAssessments_g)){
-          col <- which(grepl("http", footnotesEcosystems_g[i,]), arr.ind = TRUE)
-          
-          for(c in 1:ncol(footnotesEcosystems_g)){
-            string <- footnotesEcosystems_g[i,c]
-            
-            if(!is.na(string)){
-              footnote <- footnote+1
-              
-              # If there's a link in the footnote
-              if(c %in% col){
-                urls <- str_locate_all(string, "http")[[1]][,1]
-                urlIDs <- paste0("url", urls)
-                spaces <- str_locate_all(string, " ")[[1]][,1]
-                if(length(spaces) == 0){
-                  spaces <- -1
-                }
-                links <- list()
-                
-                for(u in 1:length(urls)){
-                  url <- urls[u]
-                  
-                  if(spaces[length(spaces)] > url){
-                    space <- spaces[which(spaces > url)][1]
-                    link <- substr(string, start=url, stop=space-1)
-                    
-                  }else{
-                    link <- substr(string, start=url, stop=nchar(string))
-                  }
-                  
-                  # Remove full-stops and parentheses at the end
-                        # First round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                  
-                        # Second round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                  
-                  links[[urlIDs[u]]] <- link
-                }
-                  
-                # Create call
-                call_substr <- rep("substr", each=length(urls)+1)
-                call_hyperlink <- rep("hyperlink", each=length(urls))
-                call_all <- c(sapply(seq_along(call_substr), function(i) append(call_substr[i], call_hyperlink[i], i)))
-                call_all <- call_all[which(!is.na(call_all))]
-                start <- 1
-                
-                for(call in 1:length(call_all)){
-                  if(call_all[call] == "substr"){
-                  
-                    if(call == 1){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", call, "]-1)")
-                    }else if(!call == length(call_all)){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", (call+1)/2, "]-1)")
-                    }else{
-                      text <- paste0("substr(string, start=", start, ", stop=nchar(string))")
-                    }
-                    
-                  }else{
-                    text <- paste0("hyperlink_text(x='link', url=links[", call/2, "], props = fp_text(color='blue', font.size=11, underlined=T, font.family = 'Calibri'))")
-                    start <- urls[call/2] + nchar(links[call/2])
-                  }
-                  
-                  if(call == 1){
-                    call_final <- text
-                  }else{
-                    call_final <- paste(call_final, text, sep=', ')
-                  }
-                }
-                  
-                call_final <- paste0("ecosystemAssessments_g_ft %<>% footnote(i=i, j=2, value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
-                
-                # Evaluate call
-                eval(parse(text=call_final))
-                
-                # If there is no link in the footnote
-              }else{
-                ecosystemAssessments_g_ft %<>% footnote(i=i, j=2, value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
-              }
-            }
-          }
-        }
-      }
-      
-                            # National
-      if(nrow(ecosystemAssessments_n) > 0){
-        footnote <- 0
-        
-        for(i in 1:nrow(ecosystemAssessments_n)){
-          col <- which(grepl("http", footnotesEcosystems_n[i,]), arr.ind = TRUE)
-          
-          for(c in 1:ncol(footnotesEcosystems_n)){
-            string <- footnotesEcosystems_n[i,c]
-            
-            if(!is.na(string)){
-              footnote <- footnote+1
-              
-              # If there's a link in the footnote
-              if(c %in% col){
-                urls <- str_locate_all(string, "http")[[1]][,1]
-                urlIDs <- paste0("url", urls)
-                spaces <- str_locate_all(string, " ")[[1]][,1]
-                if(length(spaces) == 0){
-                  spaces <- -1
-                }
-                links <- list()
-                
-                for(u in 1:length(urls)){
-                  url <- urls[u]
-                  
-                  if(spaces[length(spaces)] > url){
-                    space <- spaces[which(spaces > url)][1]
-                    link <- substr(string, start=url, stop=space-1)
-                    
-                  }else{
-                    link <- substr(string, start=url, stop=nchar(string))
-                  }
-                  
-                  # Remove full-stops and parentheses at the end
-                        # First round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                
-                        # Second round
-                  if(substr(link, start=nchar(link), stop=nchar(link)) == "."){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                    
-                  }else if(substr(link, start=nchar(link), stop=nchar(link)) == ")"){
-                    link <- substr(link, start=1, stop=nchar(link)-1)
-                  }
-                  
-                  links[[urlIDs[u]]] <- link
-                }
-              
-                # Create call
-                call_substr <- rep("substr", each=length(urls)+1)
-                call_hyperlink <- rep("hyperlink", each=length(urls))
-                call_all <- c(sapply(seq_along(call_substr), function(i) append(call_substr[i], call_hyperlink[i], i)))
-                call_all <- call_all[which(!is.na(call_all))]
-                start <- 1
-                
-                for(call in 1:length(call_all)){
-                  if(call_all[call] == "substr"){
-                    
-                    if(call == 1){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", call, "]-1)")
-                    }else if(!call == length(call_all)){
-                      text <- paste0("substr(string, start=", start, ", stop=urls[", (call+1)/2, "]-1)")
-                    }else{
-                      text <- paste0("substr(string, start=", start, ", stop=nchar(string))")
-                    }
-                    
-                  }else{
-                    text <- paste0("hyperlink_text(x='link', url=links[", call/2, "], props = fp_text(color='blue', font.size=11, underlined=T, font.family = 'Calibri'))")
-                    start <- urls[call/2] + nchar(links[call/2])
-                  }
-                  
-                  if(call == 1){
-                    call_final <- text
-                  }else{
-                    call_final <- paste(call_final, text, sep=', ')
-                  }
-                }
-                
-                call_final <- paste0("ecosystemAssessments_n_ft %<>% footnote(i=i, j=2, value=as_paragraph(", call_final,"), ref_symbols=as.integer(footnote))")
-                
-                # Evaluate call
-                eval(parse(text=call_final))
-                
-                # If there is no link in the footnote
-              }else{
-                
-                ecosystemAssessments_n_ft %<>% footnote(i=i, j=2, value=as_paragraph(as.character(string)), ref_symbols=as.integer(footnote))
-              }
-            }
-          }
-        }
       }
       
                       # Add padding
@@ -1720,10 +1597,13 @@ summary <- function(KBAforms, reviewStage, language, app){
         elementsEcosystemsOnly_g <- ecosystemAssessments_g_ft %>%
           delete_part(part='footer')
         
-        footnotesEcosystemsOnly_g <- ecosystemAssessments_g_ft %>%
+        footnotesEcosystemsOnly_g <- data.frame(row=NA) %>%
+          flextable() %>%
           delete_part(part='header') %>%
-          delete_part(part='body') %>%
-          bg(bg = "#EFEFEF", part = "footer")
+          border_remove() %>%
+          height(i=1, height=0.1, unit="mm") %>%
+          padding(padding=0, part='body')
+        
       }
       
                             # National
@@ -1731,10 +1611,12 @@ summary <- function(KBAforms, reviewStage, language, app){
         elementsEcosystemsOnly_n <- ecosystemAssessments_n_ft %>%
           delete_part(part='footer')
         
-        footnotesEcosystemsOnly_n <- ecosystemAssessments_n_ft %>%
+        footnotesEcosystemsOnly_n <- data.frame(row=NA) %>%
+          flextable() %>%
           delete_part(part='header') %>%
-          delete_part(part='body') %>%
-          bg(bg = "#EFEFEF", part = "footer")
+          border_remove() %>%
+          height(i=1, height=0.1, unit="mm") %>%
+          padding(padding=0, part='body')
       }
     }
     
