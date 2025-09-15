@@ -2068,18 +2068,38 @@ summary <- function(KBAforms, reviewStage, language, app){
       bold(j=1)
     
           # Citations
+                # Deal with case where no references are provided
     if(nrow(PF_citations) == 0){
       PF_citations[1,] <- c("", "No references provided.", "", "", "")
     }
     
+                # Sort and format URLs
+    PF_citations %<>%
+      arrange(`Long citation`, .locale="en") %>%
+      mutate(URL = trimws(URL))
+    
+                # Remove invalid URLs
+    PF_citations$URL <- sapply(PF_citations$URL, function(x) ifelse(is_valid_url(x), x, NA))
+    
+                # Make it a flextable
     citations_ft <- PF_citations %>%
-      arrange(`Long citation`) %>%
       select(`Long citation`) %>%
       flextable() %>%
       delete_part(part = "header") %>%
       width(j=colnames(.), width=9) %>%
       border_remove() %>%
       font(fontname="Calibri", part="body")
+    
+                # Add hyperlinks
+    for(u in which(!is.na(PF_citations$URL))){
+
+      citations_ft <- compose(x = citations_ft,
+                              i=u,
+                              j=1,
+                              value = as_paragraph(hyperlink_text(x = PF_citations$`Long citation`[u],
+                                                                  url = PF_citations$URL[u],
+                                                                  props = fp_text(color='blue', font.size=11, underlined=T, font.family = 'Calibri'))))
+    }
     
     #### Save KBA summary
     # Get Word template
