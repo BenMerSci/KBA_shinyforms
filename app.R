@@ -15,6 +15,7 @@ library(shinyWidgets)
 library(readxl)
 library(readr)
 library(devtools)
+library(healthyR.data)
 
 # Authenticate googledrive
 # Informations to authenticate are stored in an .Rprofile
