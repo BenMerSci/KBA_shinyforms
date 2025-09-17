@@ -1084,7 +1084,7 @@ summary <- function(KBAforms, reviewStage, language, app){
           for(row in seq(2, nrow(speciesAssessments_g), 2)){
             
             speciesAssessments_g_ft %<>%
-              merge_at(i=row, j=1:11) %>%
+              merge_at(i=row, j=1:10) %>%
               bg(i=row, bg = "#EFEFEF", part = "body") %>%
               bold(i=row-1, j=1, bold=T, part="body")
           }
