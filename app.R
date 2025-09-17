@@ -15,6 +15,7 @@ library(shinyWidgets)
 library(readxl)
 library(readr)
 library(devtools)
+library(healthyR)
 library(healthyR.data)
 
 # Authenticate googledrive
