@@ -2079,7 +2079,7 @@ summary <- function(KBAforms, reviewStage, language, app){
       mutate(URL = trimws(URL))
     
                 # Remove invalid URLs
-    PF_citations$URL <- sapply(PF_citations$URL, function(x) ifelse(is_valid_url(x), x, NA))
+    PF_citations$URL <- sapply(PF_citations$URL, function(x) ifelse(!grepl(" ", x, fixed=T) & is_valid_url(x), x, NA))
     
                 # Make it a flextable
     citations_ft <- PF_citations %>%
